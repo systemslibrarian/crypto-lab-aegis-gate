@@ -156,4 +156,14 @@ describe('AEGIS-256 draft vectors', () => {
     expect(constantTimeEqual(a[4], b[4])).toBe(true);
     expect(constantTimeEqual(a[5], b[5])).toBe(true);
   });
+
+  it('constantTimeEqual reports equality and inequality correctly', () => {
+    const a = hexToBytes('00112233445566778899aabbccddeeff');
+    const b = hexToBytes('00112233445566778899aabbccddeeff');
+    const c = hexToBytes('00112233445566778899aabbccddee00');
+
+    expect(constantTimeEqual(a, b)).toBe(true);
+    expect(constantTimeEqual(a, c)).toBe(false);
+    expect(constantTimeEqual(a, c.slice(0, 8))).toBe(false);
+  });
 });
