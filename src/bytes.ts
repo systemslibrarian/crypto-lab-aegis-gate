@@ -21,7 +21,12 @@ export function bytesToHex(bytes: Uint8Array): string {
 
 export function randomBytes(length: number): Uint8Array {
   const out = new Uint8Array(length);
-  crypto.getRandomValues(out);
+  // Web Crypto limits a single getRandomValues call to 65536 bytes.
+  const chunkSize = 65536;
+  for (let offset = 0; offset < length; offset += chunkSize) {
+    const end = Math.min(offset + chunkSize, length);
+    crypto.getRandomValues(out.subarray(offset, end));
+  }
   return out;
 }
 
