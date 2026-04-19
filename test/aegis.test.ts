@@ -32,6 +32,10 @@ interface AegisVector {
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const vectorsPath = resolve(thisDir, 'vectors/aegis-256-test-vectors.json');
 const vectors = JSON.parse(readFileSync(vectorsPath, 'utf8')) as AegisVector[];
+const v1Path = resolve(thisDir, 'vectors/aegis256_test1.json');
+const v2Path = resolve(thisDir, 'vectors/aegis256_test2.json');
+const v1 = JSON.parse(readFileSync(v1Path, 'utf8')) as AegisVector;
+const v2 = JSON.parse(readFileSync(v2Path, 'utf8')) as AegisVector;
 
 function requireHex(value: string | undefined, field: string, vectorName: string): Uint8Array {
   if (typeof value !== 'string') {
@@ -66,45 +70,36 @@ describe('AEGIS-256 update function', () => {
 });
 
 describe('AEGIS-256 draft vectors', () => {
-  const v1 = vectors.find((v) => v.name === 'Test Vector 1');
-  const v2 = vectors.find((v) => v.name === 'Test Vector 2');
-
   it('matches Test Vector 1 ciphertext and tag128 exactly', () => {
-    expect(v1).toBeTruthy();
-
     const result = aegis256Encrypt(
-      requireHex(v1?.key, 'key', 'Test Vector 1'),
-      requireHex(v1?.nonce, 'nonce', 'Test Vector 1'),
-      requireHex(v1?.ad, 'ad', 'Test Vector 1'),
-      requireHex(v1?.msg, 'msg', 'Test Vector 1'),
+      requireHex(v1.key, 'key', 'Test Vector 1'),
+      requireHex(v1.nonce, 'nonce', 'Test Vector 1'),
+      requireHex(v1.ad, 'ad', 'Test Vector 1'),
+      requireHex(v1.msg, 'msg', 'Test Vector 1'),
     );
 
-    expect(bytesToHex(result.ciphertext)).toBe(v1?.ct);
-    expect(bytesToHex(result.tag)).toBe(v1?.tag128);
+    expect(bytesToHex(result.ciphertext)).toBe(v1.ct);
+    expect(bytesToHex(result.tag)).toBe(v1.tag128);
   });
 
   it('matches Test Vector 2 (empty message) tag128 exactly', () => {
-    expect(v2).toBeTruthy();
-
     const result = aegis256Encrypt(
-      requireHex(v2?.key, 'key', 'Test Vector 2'),
-      requireHex(v2?.nonce, 'nonce', 'Test Vector 2'),
-      requireHex(v2?.ad, 'ad', 'Test Vector 2'),
-      requireHex(v2?.msg, 'msg', 'Test Vector 2'),
+      requireHex(v2.key, 'key', 'Test Vector 2'),
+      requireHex(v2.nonce, 'nonce', 'Test Vector 2'),
+      requireHex(v2.ad, 'ad', 'Test Vector 2'),
+      requireHex(v2.msg, 'msg', 'Test Vector 2'),
     );
 
-    expect(bytesToHex(result.ciphertext)).toBe(v2?.ct);
-    expect(bytesToHex(result.tag)).toBe(v2?.tag128);
+    expect(bytesToHex(result.ciphertext)).toBe(v2.ct);
+    expect(bytesToHex(result.tag)).toBe(v2.tag128);
   });
 
   it('returns null on wrong tag', () => {
-    expect(v1).toBeTruthy();
-
-    const key = requireHex(v1?.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1?.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1?.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1?.ct, 'ct', 'Test Vector 1');
-    const badTag = requireHex(v1?.tag128, 'tag128', 'Test Vector 1').slice();
+    const key = requireHex(v1.key, 'key', 'Test Vector 1');
+    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
+    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
+    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1');
+    const badTag = requireHex(v1.tag128, 'tag128', 'Test Vector 1').slice();
     badTag[0] ^= 0x01;
 
     const dec = aegis256Decrypt(key, nonce, ad, ct, badTag);
@@ -112,13 +107,11 @@ describe('AEGIS-256 draft vectors', () => {
   });
 
   it('returns null on tampered ciphertext', () => {
-    expect(v1).toBeTruthy();
-
-    const key = requireHex(v1?.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1?.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1?.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1?.ct, 'ct', 'Test Vector 1').slice();
-    const tag = requireHex(v1?.tag128, 'tag128', 'Test Vector 1');
+    const key = requireHex(v1.key, 'key', 'Test Vector 1');
+    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
+    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
+    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1').slice();
+    const tag = requireHex(v1.tag128, 'tag128', 'Test Vector 1');
     ct[0] ^= 0x01;
 
     const dec = aegis256Decrypt(key, nonce, ad, ct, tag);
@@ -126,14 +119,12 @@ describe('AEGIS-256 draft vectors', () => {
   });
 
   it('round-trips valid ciphertext for vector 1', () => {
-    expect(v1).toBeTruthy();
-
-    const key = requireHex(v1?.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1?.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1?.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1?.ct, 'ct', 'Test Vector 1');
-    const tag = requireHex(v1?.tag128, 'tag128', 'Test Vector 1');
-    const msg = requireHex(v1?.msg, 'msg', 'Test Vector 1');
+    const key = requireHex(v1.key, 'key', 'Test Vector 1');
+    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
+    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
+    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1');
+    const tag = requireHex(v1.tag128, 'tag128', 'Test Vector 1');
+    const msg = requireHex(v1.msg, 'msg', 'Test Vector 1');
 
     const dec = aegis256Decrypt(key, nonce, ad, ct, tag);
     expect(dec).not.toBeNull();
@@ -141,10 +132,8 @@ describe('AEGIS-256 draft vectors', () => {
   });
 
   it('initialization is deterministic', () => {
-    expect(v1).toBeTruthy();
-
-    const key = requireHex(v1?.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1?.nonce, 'nonce', 'Test Vector 1');
+    const key = requireHex(v1.key, 'key', 'Test Vector 1');
+    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
 
     const a = initialize(key, nonce);
     const b = initialize(key, nonce);
