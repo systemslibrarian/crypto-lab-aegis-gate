@@ -3,7 +3,7 @@
   --bg-panel: #0a2433;
   --bg-panel-soft: #0e2d40;
   --text: #f2f8ff;
-  --muted: #9ac3d7;
+  --muted: #b5d2e2;
   --cyan: #00d4ff;
   --green: #00ff88;
   --gold: #ffd700;
@@ -22,11 +22,29 @@ body {
   margin: 0;
   color: var(--text);
   font-family: var(--display);
+  line-height: 1.5;
   background:
     radial-gradient(circle at 10% -20%, #0d4f69 0%, transparent 35%),
     radial-gradient(circle at 90% 0%, #3c0f59 0%, transparent 28%),
     linear-gradient(180deg, #021019 0%, #041822 45%, #071d2a 100%);
   min-height: 100svh;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0.8rem;
+  z-index: 1000;
+  background: #06293a;
+  color: var(--text);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.6rem;
 }
 
 .shell {
@@ -107,7 +125,7 @@ input {
   color: var(--text);
   background: #072032;
   font-family: var(--mono);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .actions {
@@ -122,6 +140,7 @@ button {
   color: #dff6ff;
   border-radius: 999px;
   padding: 0.5rem 0.9rem;
+  min-height: 44px;
   font-family: var(--display);
   font-weight: 600;
   cursor: pointer;
@@ -130,6 +149,14 @@ button {
 button:hover {
   border-color: var(--cyan);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+.table-wrap:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .status {
@@ -201,6 +228,10 @@ table {
   font-size: 0.9rem;
 }
 
+.table-wrap {
+  overflow-x: auto;
+}
+
 th,
 td {
   border: 1px solid var(--line);
@@ -241,6 +272,7 @@ th {
   font-family: var(--mono);
   font-size: 0.78rem;
   min-width: 52px;
+  white-space: nowrap;
 }
 
 .bar.aegis {
@@ -287,5 +319,34 @@ ul {
 
   .bar-row .gcm {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero,
+  .panel {
+    padding: 0.85rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .state-card p {
+    overflow-wrap: anywhere;
+  }
+
+  .bar-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .bar-row > span {
+    font-size: 0.8rem;
+  }
+
+  .bar-row .gcm,
+  .bar-row .aegis {
+    grid-column: auto;
   }
 }

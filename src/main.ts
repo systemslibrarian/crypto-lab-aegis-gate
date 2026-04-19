@@ -42,6 +42,7 @@ function blockLabel(i: number): string {
 }
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+  <a class="skip-link" href="#exhibit-1">Skip to interactive demo</a>
   <main class="shell">
     <header class="hero">
       <p class="eyebrow">crypto-lab-aegis-gate</p>
@@ -70,7 +71,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
       <label>Ciphertext (hex)<textarea id="ct-output" rows="3" readonly></textarea></label>
       <label>Tag (hex, 16 bytes)<input id="tag-output" type="text" readonly /></label>
-      <pre id="decrypt-status" class="status">Ready.</pre>
+      <pre id="decrypt-status" class="status" role="status" aria-live="polite">Ready.</pre>
     </section>
 
     <section class="panel" id="exhibit-2">
@@ -81,32 +82,34 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <button id="sm-encrypt" type="button">Encrypt PT Block</button>
         <button id="sm-finalize" type="button">Finalize (7 updates)</button>
       </div>
-      <div id="state-hexagon" class="state-hexagon"></div>
-      <pre id="state-log" class="status">State machine idle.</pre>
+      <div id="state-hexagon" class="state-hexagon" role="region" aria-label="AEGIS state blocks"></div>
+      <pre id="state-log" class="status" role="status" aria-live="polite">State machine idle.</pre>
     </section>
 
     <section class="panel" id="exhibit-3">
       <h2>Exhibit 3: Why AEGIS Over AES-GCM?</h2>
-      <table>
-        <thead><tr><th>Property</th><th>AEGIS-256</th><th>AES-256-GCM</th><th>ChaCha20-Poly1305</th></tr></thead>
-        <tbody>
-          <tr><td>Key size</td><td>256 bits</td><td>256 bits</td><td>256 bits</td></tr>
-          <tr><td>Nonce size</td><td><strong>256 bits</strong></td><td>96 bits</td><td>96 bits</td></tr>
-          <tr><td>Random nonce safety</td><td><strong>Indefinite practical use</strong></td><td>~2^32 messages</td><td>~2^32 messages</td></tr>
-          <tr><td>Hardware AES throughput</td><td><strong>Typically faster than GCM</strong></td><td>Fast</td><td>No AES acceleration</td></tr>
-          <tr><td>No AES hardware</td><td>Slow</td><td>Slow</td><td>Fast</td></tr>
-          <tr><td>Nonce reuse catastrophe</td><td>Severe</td><td>Severe</td><td>Severe</td></tr>
-          <tr><td>Standardization</td><td>CFRG Draft</td><td>NIST / RFC ecosystem</td><td>RFC 8439</td></tr>
-          <tr><td>OWASP ASVS approved</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-        </tbody>
-      </table>
+      <div class="table-wrap" role="region" aria-label="AEGIS comparison table" tabindex="0">
+        <table>
+          <thead><tr><th>Property</th><th>AEGIS-256</th><th>AES-256-GCM</th><th>ChaCha20-Poly1305</th></tr></thead>
+          <tbody>
+            <tr><td>Key size</td><td>256 bits</td><td>256 bits</td><td>256 bits</td></tr>
+            <tr><td>Nonce size</td><td><strong>256 bits</strong></td><td>96 bits</td><td>96 bits</td></tr>
+            <tr><td>Random nonce safety</td><td><strong>Indefinite practical use</strong></td><td>~2^32 messages</td><td>~2^32 messages</td></tr>
+            <tr><td>Hardware AES throughput</td><td><strong>Typically faster than GCM</strong></td><td>Fast</td><td>No AES acceleration</td></tr>
+            <tr><td>No AES hardware</td><td>Slow</td><td>Slow</td><td>Fast</td></tr>
+            <tr><td>Nonce reuse catastrophe</td><td>Severe</td><td>Severe</td><td>Severe</td></tr>
+            <tr><td>Standardization</td><td>CFRG Draft</td><td>NIST / RFC ecosystem</td><td>RFC 8439</td></tr>
+            <tr><td>OWASP ASVS approved</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
       <p class="note">This browser demo is pure TypeScript, so Web Crypto AES-GCM will be faster here. Native AEGIS with AES-NI/ARM crypto extensions is where AEGIS targets top throughput.</p>
     </section>
 
     <section class="panel" id="exhibit-4">
       <h2>Exhibit 4: Live Throughput Benchmark</h2>
       <button id="benchmark-btn" type="button">Run Benchmark</button>
-      <pre id="benchmark-log" class="status">Not started.</pre>
+      <pre id="benchmark-log" class="status" role="status" aria-live="polite">Not started.</pre>
       <div id="benchmark-chart" class="chart"></div>
     </section>
 
@@ -285,33 +288,37 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
     'Benchmarking 1KB, 16KB, 256KB, 1MB... this yields between batches to avoid UI lockups.';
   benchmarkChart.innerHTML = '';
 
-  const results = await runComparison();
-  const maxThroughput = Math.max(
-    ...results.aegis256.map((r) => r.throughputMBps),
-    ...results.aesGcm.map((r) => r.throughputMBps),
-  );
-
-  const lines: string[] = [];
-  for (let i = 0; i < results.messageSizes.length; i += 1) {
-    const size = results.messageSizes[i];
-    const a = results.aegis256[i];
-    const g = results.aesGcm[i];
-
-    lines.push(
-      `${Math.round(size / 1024)} KB: AEGIS ${a.throughputMBps.toFixed(1)} MB/s | AES-GCM ${g.throughputMBps.toFixed(1)} MB/s`,
+  try {
+    const results = await runComparison();
+    const maxThroughput = Math.max(
+      ...results.aegis256.map((r) => r.throughputMBps),
+      ...results.aesGcm.map((r) => r.throughputMBps),
     );
 
-    const row = document.createElement('div');
-    row.className = 'bar-row';
-    row.innerHTML = `
-      <span>${Math.round(size / 1024)} KB</span>
-      <div class="bar aegis" style="width:${(a.throughputMBps / maxThroughput) * 100}%">AEGIS ${a.throughputMBps.toFixed(1)}</div>
-      <div class="bar gcm" style="width:${(g.throughputMBps / maxThroughput) * 100}%">GCM ${g.throughputMBps.toFixed(1)}</div>
-    `;
-    benchmarkChart.appendChild(row);
-  }
+    const lines: string[] = [];
+    for (let i = 0; i < results.messageSizes.length; i += 1) {
+      const size = results.messageSizes[i];
+      const a = results.aegis256[i];
+      const g = results.aesGcm[i];
 
-  benchmarkLog.textContent = `${lines.join('\n')}\n\nWeb Crypto is native and usually faster in browser demos. Native AEGIS with AES-NI/ARM crypto extensions is where AEGIS is designed to excel.`;
+      lines.push(
+        `${Math.round(size / 1024)} KB: AEGIS ${a.throughputMBps.toFixed(1)} MB/s | AES-GCM ${g.throughputMBps.toFixed(1)} MB/s`,
+      );
+
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <span>${Math.round(size / 1024)} KB</span>
+        <div class="bar aegis" style="width:${(a.throughputMBps / maxThroughput) * 100}%">AEGIS ${a.throughputMBps.toFixed(1)}</div>
+        <div class="bar gcm" style="width:${(g.throughputMBps / maxThroughput) * 100}%">GCM ${g.throughputMBps.toFixed(1)}</div>
+      `;
+      benchmarkChart.appendChild(row);
+    }
+
+    benchmarkLog.textContent = `${lines.join('\n')}\n\nWeb Crypto is native and usually faster in browser demos. Native AEGIS with AES-NI/ARM crypto extensions is where AEGIS is designed to excel.`;
+  } catch (error) {
+    benchmarkLog.textContent = `Benchmark failed: ${(error as Error).message}`;
+  }
 });
 
 keyInput.value = bytesToHex(randomBytes(32));
