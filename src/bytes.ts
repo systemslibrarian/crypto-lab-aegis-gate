@@ -3,14 +3,16 @@ export function hexToBytes(hex: string): Uint8Array {
   if (normalized.length % 2 !== 0) {
     throw new Error('Hex string must have even length');
   }
+  // Validate the whole string up front: Number.parseInt('1g', 16) stops at the
+  // bad character and silently returns 0x01, so a per-pair NaN check is not
+  // enough to reject malformed input like "1g" or "ff0z".
+  if (!/^[0-9a-f]*$/.test(normalized)) {
+    throw new Error('Invalid hex string');
+  }
 
   const out = new Uint8Array(normalized.length / 2);
   for (let i = 0; i < out.length; i += 1) {
-    const byte = Number.parseInt(normalized.slice(i * 2, i * 2 + 2), 16);
-    if (Number.isNaN(byte)) {
-      throw new Error('Invalid hex string');
-    }
-    out[i] = byte;
+    out[i] = Number.parseInt(normalized.slice(i * 2, i * 2 + 2), 16);
   }
   return out;
 }

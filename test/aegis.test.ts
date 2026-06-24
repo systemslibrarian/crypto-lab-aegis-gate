@@ -3,17 +3,27 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { aegis256Decrypt, aegis256Encrypt, constantTimeEqual, initialize, update } from '../src/aegis';
+import {
+  type TagLength,
+  aegis256Decrypt,
+  aegis256Encrypt,
+  constantTimeEqual,
+  initialize,
+  update,
+} from '../src/aegis';
 import { bytesToHex, hexToBytes } from '../src/bytes';
 
 interface AegisVector {
   name: string;
+  error?: string;
   key?: string;
   nonce?: string;
   ad?: string;
   msg?: string;
   ct?: string;
   tag128?: string;
+  tag256?: string;
+  // Fields for the standalone Update test vector:
   S0?: string;
   S1?: string;
   S2?: string;
@@ -32,10 +42,6 @@ interface AegisVector {
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const vectorsPath = resolve(thisDir, 'vectors/aegis-256-test-vectors.json');
 const vectors = JSON.parse(readFileSync(vectorsPath, 'utf8')) as AegisVector[];
-const v1Path = resolve(thisDir, 'vectors/aegis256_test1.json');
-const v2Path = resolve(thisDir, 'vectors/aegis256_test2.json');
-const v1 = JSON.parse(readFileSync(v1Path, 'utf8')) as AegisVector;
-const v2 = JSON.parse(readFileSync(v2Path, 'utf8')) as AegisVector;
 
 function requireHex(value: string | undefined, field: string, vectorName: string): Uint8Array {
   if (typeof value !== 'string') {
@@ -44,9 +50,13 @@ function requireHex(value: string | undefined, field: string, vectorName: string
   return hexToBytes(value);
 }
 
+const updateVector = vectors.find((v) => v.name === 'Update Test Vector');
+// Encryption vectors carry a `msg`; failure vectors carry an `error` instead.
+const encryptVectors = vectors.filter((v) => typeof v.msg === 'string' && !v.error);
+const failureVectors = vectors.filter((v) => v.error === 'verification failed');
+
 describe('AEGIS-256 update function', () => {
   it('matches the official update test vector', () => {
-    const updateVector = vectors.find((v) => v.name === 'Update Test Vector');
     expect(updateVector).toBeTruthy();
 
     const S = [
@@ -69,81 +79,86 @@ describe('AEGIS-256 update function', () => {
   });
 });
 
-describe('AEGIS-256 draft vectors', () => {
-  it('matches Test Vector 1 ciphertext and tag128 exactly', () => {
-    const result = aegis256Encrypt(
-      requireHex(v1.key, 'key', 'Test Vector 1'),
-      requireHex(v1.nonce, 'nonce', 'Test Vector 1'),
-      requireHex(v1.ad, 'ad', 'Test Vector 1'),
-      requireHex(v1.msg, 'msg', 'Test Vector 1'),
-    );
-
-    expect(bytesToHex(result.ciphertext)).toBe(v1.ct);
-    expect(bytesToHex(result.tag)).toBe(v1.tag128);
+describe('AEGIS-256 encryption vectors (draft-irtf-cfrg-aegis-aead-18)', () => {
+  it('exercises the full official vector set', () => {
+    // Guard against silently testing fewer vectors than the draft publishes.
+    expect(encryptVectors.length).toBeGreaterThanOrEqual(5);
+    expect(failureVectors.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('matches Test Vector 2 (empty message) tag128 exactly', () => {
-    const result = aegis256Encrypt(
-      requireHex(v2.key, 'key', 'Test Vector 2'),
-      requireHex(v2.nonce, 'nonce', 'Test Vector 2'),
-      requireHex(v2.ad, 'ad', 'Test Vector 2'),
-      requireHex(v2.msg, 'msg', 'Test Vector 2'),
-    );
+  for (const v of encryptVectors) {
+    const key = requireHex(v.key, 'key', v.name);
+    const nonce = requireHex(v.nonce, 'nonce', v.name);
+    const ad = requireHex(v.ad, 'ad', v.name);
+    const msg = requireHex(v.msg, 'msg', v.name);
 
-    expect(bytesToHex(result.ciphertext)).toBe(v2.ct);
-    expect(bytesToHex(result.tag)).toBe(v2.tag128);
+    it(`${v.name}: encrypts to the exact ciphertext, tag128, and tag256`, () => {
+      const t128 = aegis256Encrypt(key, nonce, ad, msg, 16);
+      expect(bytesToHex(t128.ciphertext)).toBe(v.ct);
+      expect(bytesToHex(t128.tag)).toBe(v.tag128);
+
+      const t256 = aegis256Encrypt(key, nonce, ad, msg, 32);
+      // Ciphertext is independent of tag length.
+      expect(bytesToHex(t256.ciphertext)).toBe(v.ct);
+      expect(bytesToHex(t256.tag)).toBe(v.tag256);
+    });
+
+    it(`${v.name}: round-trips through decrypt for both tag lengths`, () => {
+      for (const tagLength of [16, 32] as TagLength[]) {
+        const { ciphertext, tag } = aegis256Encrypt(key, nonce, ad, msg, tagLength);
+        const decrypted = aegis256Decrypt(key, nonce, ad, ciphertext, tag, tagLength);
+        expect(decrypted).not.toBeNull();
+        expect(decrypted && constantTimeEqual(decrypted, msg)).toBe(true);
+      }
+    });
+  }
+});
+
+describe('AEGIS-256 authentication failures (draft vectors 6-9)', () => {
+  for (const v of failureVectors) {
+    const key = requireHex(v.key, 'key', v.name);
+    const nonce = requireHex(v.nonce, 'nonce', v.name);
+    const ad = requireHex(v.ad, 'ad', v.name);
+    const ct = requireHex(v.ct, 'ct', v.name);
+
+    it(`${v.name}: rejects with a 128-bit tag`, () => {
+      const tag = requireHex(v.tag128, 'tag128', v.name);
+      expect(aegis256Decrypt(key, nonce, ad, ct, tag, 16)).toBeNull();
+    });
+
+    it(`${v.name}: rejects with a 256-bit tag`, () => {
+      const tag = requireHex(v.tag256, 'tag256', v.name);
+      expect(aegis256Decrypt(key, nonce, ad, ct, tag, 32)).toBeNull();
+    });
+  }
+});
+
+describe('AEGIS-256 API behaviour', () => {
+  const vector1 = encryptVectors[0];
+  const key = requireHex(vector1.key, 'key', vector1.name);
+  const nonce = requireHex(vector1.nonce, 'nonce', vector1.name);
+  const ad = requireHex(vector1.ad, 'ad', vector1.name);
+
+  it('rejects a tag whose length does not match the requested tagLength', () => {
+    const { ciphertext, tag } = aegis256Encrypt(key, nonce, ad, hexToBytes(vector1.msg ?? ''), 16);
+    // A valid 16-byte tag must be refused when 32 bytes are expected.
+    expect(aegis256Decrypt(key, nonce, ad, ciphertext, tag, 32)).toBeNull();
   });
 
-  it('returns null on wrong tag', () => {
-    const key = requireHex(v1.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1');
-    const badTag = requireHex(v1.tag128, 'tag128', 'Test Vector 1').slice();
-    badTag[0] ^= 0x01;
-
-    const dec = aegis256Decrypt(key, nonce, ad, ct, badTag);
-    expect(dec).toBeNull();
-  });
-
-  it('returns null on tampered ciphertext', () => {
-    const key = requireHex(v1.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1').slice();
-    const tag = requireHex(v1.tag128, 'tag128', 'Test Vector 1');
-    ct[0] ^= 0x01;
-
-    const dec = aegis256Decrypt(key, nonce, ad, ct, tag);
-    expect(dec).toBeNull();
-  });
-
-  it('round-trips valid ciphertext for vector 1', () => {
-    const key = requireHex(v1.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
-    const ad = requireHex(v1.ad, 'ad', 'Test Vector 1');
-    const ct = requireHex(v1.ct, 'ct', 'Test Vector 1');
-    const tag = requireHex(v1.tag128, 'tag128', 'Test Vector 1');
-    const msg = requireHex(v1.msg, 'msg', 'Test Vector 1');
-
-    const dec = aegis256Decrypt(key, nonce, ad, ct, tag);
-    expect(dec).not.toBeNull();
-    expect(dec && constantTimeEqual(dec, msg)).toBe(true);
+  it('round-trips a non-block-aligned plaintext (partial final block)', () => {
+    const msg = new TextEncoder().encode('AEGIS handles partial blocks too.'); // 33 bytes
+    const { ciphertext, tag } = aegis256Encrypt(key, nonce, ad, msg);
+    expect(ciphertext.length).toBe(msg.length);
+    const decrypted = aegis256Decrypt(key, nonce, ad, ciphertext, tag);
+    expect(decrypted && constantTimeEqual(decrypted, msg)).toBe(true);
   });
 
   it('initialization is deterministic', () => {
-    const key = requireHex(v1.key, 'key', 'Test Vector 1');
-    const nonce = requireHex(v1.nonce, 'nonce', 'Test Vector 1');
-
     const a = initialize(key, nonce);
     const b = initialize(key, nonce);
-
-    expect(constantTimeEqual(a[0], b[0])).toBe(true);
-    expect(constantTimeEqual(a[1], b[1])).toBe(true);
-    expect(constantTimeEqual(a[2], b[2])).toBe(true);
-    expect(constantTimeEqual(a[3], b[3])).toBe(true);
-    expect(constantTimeEqual(a[4], b[4])).toBe(true);
-    expect(constantTimeEqual(a[5], b[5])).toBe(true);
+    for (let i = 0; i < 6; i += 1) {
+      expect(constantTimeEqual(a[i], b[i])).toBe(true);
+    }
   });
 
   it('constantTimeEqual reports equality and inequality correctly', () => {

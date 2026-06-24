@@ -50,8 +50,18 @@ export function update(S: AegisState, M: AESBlock): AegisState {
 }
 
 /**
+ * Length in bytes of an AEGIS-256 authentication tag.
+ * The draft permits a 128-bit (16-byte) or 256-bit (32-byte) tag.
+ */
+export type TagLength = 16 | 32;
+
+/**
  * Initialize AEGIS-256 state with 256-bit key and 256-bit nonce.
- * Performs 4 rounds of injection as specified.
+ *
+ * Seeds the six state blocks from K0/K1, N0/N1, and the constants C0/C1,
+ * then runs the update function 16 times (4 passes over the 4-block
+ * injection schedule K0, K1, K0^N0, K1^N1) to diffuse them, per
+ * draft-irtf-cfrg-aegis-aead-18 Section 4.4.2.
  */
 export function initialize(key: Uint8Array, nonce: Uint8Array): AegisState {
   ensureLength(key, 32, 'key');
@@ -130,9 +140,19 @@ function writeLE64(out: Uint8Array, offset: number, value: bigint): void {
 }
 
 /**
- * Finalize and produce 128-bit tag.
+ * Finalize and produce the authentication tag.
+ *
+ * Absorbs the associated-data and message bit lengths (XORed into S3),
+ * runs 7 closing updates, then folds the state into a tag. A 128-bit tag
+ * is the XOR of all six blocks; a 256-bit tag concatenates (S0^S1^S2) with
+ * (S3^S4^S5), per draft-irtf-cfrg-aegis-aead-18 Section 4.4.6.
  */
-export function finalize(S: AegisState, adLenBits: bigint, msgLenBits: bigint): AESBlock {
+export function finalize(
+  S: AegisState,
+  adLenBits: bigint,
+  msgLenBits: bigint,
+  tagLength: TagLength = 16,
+): Uint8Array {
   const t = new Uint8Array(16);
   writeLE64(t, 0, adLenBits);
   writeLE64(t, 8, msgLenBits);
@@ -141,6 +161,13 @@ export function finalize(S: AegisState, adLenBits: bigint, msgLenBits: bigint): 
   let state = S;
   for (let i = 0; i < 7; i += 1) {
     state = update(state, tt);
+  }
+
+  if (tagLength === 32) {
+    return concatBytes([
+      xorBlocks(xorBlocks(state[0], state[1]), state[2]),
+      xorBlocks(xorBlocks(state[3], state[4]), state[5]),
+    ]);
   }
 
   return xorBlocks(
@@ -167,6 +194,7 @@ export function aegis256Encrypt(
   nonce: Uint8Array,
   ad: Uint8Array,
   plaintext: Uint8Array,
+  tagLength: TagLength = 16,
 ): { ciphertext: Uint8Array; tag: Uint8Array } {
   let state = initialize(key, nonce);
   state = absorbData(state, ad);
@@ -180,7 +208,7 @@ export function aegis256Encrypt(
     state = nextState;
   }
 
-  const tag = finalize(state, BigInt(ad.length * 8), BigInt(plaintext.length * 8));
+  const tag = finalize(state, BigInt(ad.length * 8), BigInt(plaintext.length * 8), tagLength);
   return { ciphertext: concatBytes(chunks), tag };
 }
 
@@ -210,8 +238,9 @@ export function aegis256Decrypt(
   ad: Uint8Array,
   ciphertext: Uint8Array,
   tag: Uint8Array,
+  tagLength: TagLength = 16,
 ): Uint8Array | null {
-  if (tag.length !== 16) {
+  if (tag.length !== tagLength) {
     return null;
   }
 
@@ -236,7 +265,7 @@ export function aegis256Decrypt(
     }
   }
 
-  const computedTag = finalize(state, BigInt(ad.length * 8), BigInt(ciphertext.length * 8));
+  const computedTag = finalize(state, BigInt(ad.length * 8), BigInt(ciphertext.length * 8), tagLength);
   if (!constantTimeEqual(computedTag, tag)) {
     return null;
   }

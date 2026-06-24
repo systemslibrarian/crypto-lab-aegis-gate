@@ -10,6 +10,7 @@ import {
   initialize,
 } from './aegis';
 import { runComparison } from './benchmark';
+import { runConformance } from './conformance';
 import { bytesToHex, bytesToUtf8, hexToBytes, padBlock, randomBytes, utf8ToBytes } from './bytes';
 
 function must<T extends Element>(selector: string): T {
@@ -49,6 +50,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <h1>AEGIS-256: Fast AES-Based AEAD</h1>
       <p class="subtitle">Six-state AES sponge construction, implemented from the CFRG draft and verified with official vectors.</p>
       <div class="warning">Nonce reuse is catastrophic. Never encrypt two messages with the same key+nonce pair.</div>
+      <div id="conformance" class="conformance" role="status" aria-live="polite">
+        <span class="conformance-badge" data-state="pending">checking…</span>
+        <span class="conformance-text">Replaying official draft vectors in your browser…</span>
+        <button id="conformance-details-btn" type="button" class="link-btn" aria-expanded="false" aria-controls="conformance-details" hidden>Show details</button>
+      </div>
+      <div id="conformance-details" class="table-wrap" role="region" aria-label="Per-vector conformance results" tabindex="0" hidden>
+        <table class="conformance-table">
+          <caption class="visually-hidden">Per-vector conformance results: ciphertext, 128-bit tag, and 256-bit tag for each official draft test vector</caption>
+          <thead><tr><th scope="col">Draft vector</th><th scope="col">Ciphertext</th><th scope="col">128-bit tag</th><th scope="col">256-bit tag</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </header>
 
     <section class="panel" id="exhibit-1">
@@ -99,7 +112,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             <tr><td>No AES hardware</td><td>Slow</td><td>Slow</td><td>Fast</td></tr>
             <tr><td>Nonce reuse catastrophe</td><td>Severe</td><td>Severe</td><td>Severe</td></tr>
             <tr><td>Standardization</td><td>CFRG Draft</td><td>NIST / RFC ecosystem</td><td>RFC 8439</td></tr>
-            <tr><td>OWASP ASVS approved</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
           </tbody>
         </table>
       </div>
@@ -115,7 +127,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
     <section class="panel" id="exhibit-5">
       <h2>Exhibit 5: Why This Matters</h2>
-      <p>Production ecosystems already experimenting with or shipping AEGIS include libsodium, Zig, .NET, OpenSSL providers, and Rust crates. The algorithm is designed for high-throughput systems where AES hardware is available.</p>
+      <p>AEGIS has implementations across the ecosystem &mdash; including libsodium and the Zig standard library &mdash; and is of active interest for high-throughput systems where AES hardware acceleration is available.</p>
       <p>AEGIS is still a CFRG informational draft rather than a finalized TLS cipher suite standard, which is the main reason adoption is not yet universal.</p>
       <ul>
         <li>See also: crypto-lab-aes-modes</li>
@@ -218,6 +230,10 @@ must<HTMLButtonElement>('#decrypt-btn').addEventListener('click', () => {
 must<HTMLButtonElement>('#tamper-ct-btn').addEventListener('click', () => {
   try {
     const ct = hexToBytes(ctOutput.value.trim());
+    if (ct.length === 0) {
+      setStatus('No ciphertext bytes to tamper. Encrypt a non-empty message first.');
+      return;
+    }
     ctOutput.value = bytesToHex(flipOneBit(ct));
     setStatus('Ciphertext tampered by 1 bit. Decrypt should fail.');
   } catch {
@@ -228,6 +244,10 @@ must<HTMLButtonElement>('#tamper-ct-btn').addEventListener('click', () => {
 must<HTMLButtonElement>('#tamper-tag-btn').addEventListener('click', () => {
   try {
     const tag = hexToBytes(tagOutput.value.trim());
+    if (tag.length === 0) {
+      setStatus('No tag to tamper. Encrypt first.');
+      return;
+    }
     tagOutput.value = bytesToHex(flipOneBit(tag));
     setStatus('Tag tampered by 1 bit. Decrypt should fail.');
   } catch {
@@ -320,6 +340,50 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
     benchmarkLog.textContent = `Benchmark failed: ${(error as Error).message}`;
   }
 });
+
+function renderConformance(): void {
+  const wrap = must<HTMLDivElement>('#conformance');
+  const badge = must<HTMLSpanElement>('.conformance-badge');
+  const text = must<HTMLSpanElement>('.conformance-text');
+  const detailsBtn = must<HTMLButtonElement>('#conformance-details-btn');
+  const details = must<HTMLDivElement>('#conformance-details');
+  const tbody = must<HTMLTableSectionElement>('#conformance-details tbody');
+
+  const report = runConformance();
+  const mark = (ok: boolean): string =>
+    ok
+      ? '<span class="ok" role="img" aria-label="match">✓</span>'
+      : '<span class="fail" role="img" aria-label="mismatch">✗</span>';
+
+  tbody.innerHTML = report.rows
+    .map(
+      (r) => `
+      <tr>
+        <th scope="row">${r.name}</th>
+        <td>${mark(r.ctOk)}</td>
+        <td>${mark(r.tag128Ok)}</td>
+        <td>${mark(r.tag256Ok)}</td>
+      </tr>`,
+    )
+    .join('');
+
+  wrap.dataset.state = report.allPass ? 'pass' : 'fail';
+  badge.dataset.state = report.allPass ? 'pass' : 'fail';
+  badge.textContent = report.allPass ? 'PASS' : 'FAIL';
+  text.textContent = report.allPass
+    ? `${report.passed}/${report.total} official draft vectors reproduced exactly — ciphertext, 128-bit tag, and 256-bit tag.`
+    : `${report.passed}/${report.total} draft vectors matched. Something is off — see details.`;
+  detailsBtn.hidden = false;
+
+  detailsBtn.addEventListener('click', () => {
+    const open = details.hidden;
+    details.hidden = !open;
+    detailsBtn.setAttribute('aria-expanded', String(open));
+    detailsBtn.textContent = open ? 'Hide details' : 'Show details';
+  });
+}
+
+renderConformance();
 
 keyInput.value = bytesToHex(randomBytes(32));
 nonceInput.value = bytesToHex(randomBytes(32));
