@@ -25,9 +25,13 @@ byte-identical to the authoritative fixture so the two cannot drift.
 - Comparing nonce handling: 96-bit (AES-GCM) vs 256-bit (AEGIS-256)
 - Evaluating AEGIS-256 ideas for high-throughput protocols and systems
 - Not for interoperability-critical TLS production paths today; AEGIS is not yet a TLS cipher suite
+- Do NOT rely on this pure-TypeScript build as production crypto — it is a teaching demo, not native-speed hardened code
 
 ## Live Demo
-https://systemslibrarian.github.io/crypto-lab-aegis-gate/
+
+**[systemslibrarian.github.io/crypto-lab-aegis-gate](https://systemslibrarian.github.io/crypto-lab-aegis-gate/)**
+
+The page replays every official draft test vector through its own encrypt path in your browser, showing each result byte-for-byte, and lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants of AEGIS-256.
 
 ## What Can Go Wrong
 - AEGIS is a CFRG Informational draft, not a finalized RFC standard
@@ -36,11 +40,29 @@ https://systemslibrarian.github.io/crypto-lab-aegis-gate/
 - Key commitment details differ by variant; review draft security considerations for protocol-level assumptions
 
 ## Real-World Usage
-Designed by Hongjun Wu and Bart Preneel as a CAESAR finalist and specified
-in draft-irtf-cfrg-aegis-aead revisions through October 2025. The AEGIS
-family has implementations across the ecosystem — including libsodium and
-the Zig standard library — and is of active interest for high-throughput
-protocols and networking environments where AES hardware acceleration is
-available. Because it is still a CFRG Informational draft rather than a
-finalized RFC, treat any specific compliance or regulatory claims you see
-elsewhere as needing independent verification before relying on them.
+- Designed by Hongjun Wu and Bart Preneel as a CAESAR competition finalist and specified in draft-irtf-cfrg-aegis-aead through October 2025
+- Implemented across the ecosystem, including libsodium and the Zig standard library
+- Of active interest for high-throughput protocols and networking environments where AES hardware acceleration is available
+- Because it is still a CFRG Informational draft rather than a finalized RFC, treat specific compliance or regulatory claims seen elsewhere as needing independent verification
+
+## How to Run Locally
+
+```bash
+git clone https://github.com/systemslibrarian/crypto-lab-aegis-gate
+cd crypto-lab-aegis-gate
+npm install
+npm run dev
+```
+
+## Related Demos
+- [crypto-lab-aes-modes](https://systemslibrarian.github.io/crypto-lab-aes-modes/) — AES block cipher modes and AEAD (GCM/CCM) behavior.
+- [crypto-lab-ascon](https://systemslibrarian.github.io/crypto-lab-ascon/) — lightweight sponge-based AEAD, the NIST Lightweight Cryptography standard.
+- [crypto-lab-chacha20-stream](https://systemslibrarian.github.io/crypto-lab-chacha20-stream/) — ARX stream cipher and the danger of nonce reuse.
+- [crypto-lab-shadow-vault](https://systemslibrarian.github.io/crypto-lab-shadow-vault/) — ChaCha20-Poly1305 authenticated encryption.
+- [crypto-lab-nonce-guard](https://systemslibrarian.github.io/crypto-lab-nonce-guard/) — AES-GCM-SIV nonce-misuse-resistant AEAD.
+
+---
+
+*One of 60+ browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
+
+*"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
