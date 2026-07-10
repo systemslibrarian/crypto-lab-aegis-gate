@@ -51,6 +51,18 @@ export function concatBytes(parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
+/**
+ * XOR two byte arrays over their overlapping prefix (min of the two lengths).
+ */
+export function xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const length = Math.min(a.length, b.length);
+  const out = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    out[i] = a[i] ^ b[i];
+  }
+  return out;
+}
+
 export function splitBlocks(input: Uint8Array, blockSize = 16): Uint8Array[] {
   if (blockSize <= 0) {
     throw new Error('blockSize must be > 0');

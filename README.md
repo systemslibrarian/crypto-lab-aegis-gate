@@ -14,10 +14,34 @@ implemented from FIPS 197.
 
 The page opens by replaying every official draft test vector through this
 implementation's own encrypt path, in your browser, and showing the result
-byte-for-byte — so "verified against the official vectors" is something you
-watch happen rather than take on trust. The same vectors are exercised in
-the test suite (`npm test`), and a guard test keeps the in-browser copy
-byte-identical to the authoritative fixture so the two cannot drift.
+byte-for-byte — both the five encryption vectors (ciphertext, 128-bit tag,
+256-bit tag, and a decrypt round-trip) and the four must-reject forgery
+vectors, so "verified against the official vectors" is something you watch
+happen rather than take on trust. The same vectors are exercised in the test
+suite (`npm test`), and a guard test keeps the in-browser copy byte-identical
+to the authoritative fixture so the two cannot drift.
+
+Six interactive exhibits go beyond a byte dump:
+
+- **Encrypt / tamper (Exhibit 1)** — encrypt your own input with either tag
+  length, flip a single bit of ciphertext or tag and see exactly where it
+  landed, and watch the recomputed tag diverge in nearly every byte. Any
+  scenario is shareable as a URL, so a class can open one link in a known state.
+- **The state machine, live (Exhibit 2)** — step Init / Absorb / Enc / Finalize
+  on the real implementation, with an animated dataflow diagram, byte-level
+  diff highlighting between steps, the extracted keystream `Z`, and the
+  verbatim draft-18 pseudocode alongside, highlighting whichever function ran.
+  An avalanche heatmap shows one flipped nonce bit diffusing to ~50% of the
+  768-bit state across the 16 setup updates.
+- **The nonce-reuse catastrophe (Exhibit 3)** — encrypt two messages under the
+  same key+nonce and recover the secret from `C_A ⊕ C_B ⊕ A`, with the
+  genuinely-leaked prefix marked. Because AEGIS folds plaintext into its state
+  (it is not a pure stream cipher), the first two blocks always leak while the
+  tail is protected — an honest, more interesting picture than a full two-time pad.
+- **Birthday-bound explorer (Exhibit 4)** — a slider comparing random-nonce
+  collision probability for 96-bit vs 256-bit nonces, the reason AEGIS-256 exists.
+- **Live throughput benchmark (Exhibit 5)** and the **AEGIS family table
+  (Exhibit 6)** covering AEGIS-128L, 256, and the 128X/256X parallel variants.
 
 ## When to Use It
 - Understanding AES-based AEADs beyond AES-GCM and how nonce size changes deployment risk
@@ -31,7 +55,7 @@ byte-identical to the authoritative fixture so the two cannot drift.
 
 **[systemslibrarian.github.io/crypto-lab-aegis-gate](https://systemslibrarian.github.io/crypto-lab-aegis-gate/)**
 
-The page replays every official draft test vector through its own encrypt path in your browser, showing each result byte-for-byte, and lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants of AEGIS-256.
+The page replays every official draft test vector through its own encrypt path in your browser, showing each result byte-for-byte, lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants, steps the AEGIS state machine beside the draft pseudocode, and demonstrates the nonce-reuse catastrophe as a live known-plaintext recovery.
 
 ## What Can Go Wrong
 - AEGIS is a CFRG Informational draft, not a finalized RFC standard

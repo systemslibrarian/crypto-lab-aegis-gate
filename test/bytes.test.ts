@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { bytesToHex, concatBytes, hexToBytes, padBlock } from '../src/bytes';
+import { bytesToHex, concatBytes, hexToBytes, padBlock, xorBytes } from '../src/bytes';
 
 describe('hexToBytes', () => {
   it('parses valid lowercase and uppercase hex', () => {
@@ -47,6 +47,22 @@ describe('padBlock', () => {
   it('truncates an over-long block to the target size', () => {
     const out = padBlock(new Uint8Array(20).fill(0x11));
     expect(out.length).toBe(16);
+  });
+});
+
+describe('xorBytes', () => {
+  it('XORs byte-wise', () => {
+    expect(bytesToHex(xorBytes(hexToBytes('ff00aa'), hexToBytes('0f0f0f')))).toBe('f00fa5');
+  });
+
+  it('truncates to the shorter input', () => {
+    expect(bytesToHex(xorBytes(hexToBytes('ffff'), hexToBytes('0f')))).toBe('f0');
+    expect(bytesToHex(xorBytes(hexToBytes('0f'), hexToBytes('ffff')))).toBe('f0');
+  });
+
+  it('x xor x is zero', () => {
+    const x = hexToBytes('deadbeef');
+    expect(bytesToHex(xorBytes(x, x))).toBe('00000000');
   });
 });
 

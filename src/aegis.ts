@@ -8,7 +8,8 @@ import { concatBytes, hexToBytes, padBlock } from './bytes';
 export type AegisState = [AESBlock, AESBlock, AESBlock, AESBlock, AESBlock, AESBlock];
 
 /**
- * Constants from draft-irtf-cfrg-aegis-aead-18 Section 3.1.
+ * Constants from draft-irtf-cfrg-aegis-aead-18 Section 2 (first bytes of the
+ * Fibonacci sequence mod 256).
  */
 export const C0: AESBlock = hexToBytes('000101020305080d1522375990e97962');
 export const C1: AESBlock = hexToBytes('db3d18556dc22ff12011314273b528dd');
@@ -31,12 +32,18 @@ function andBlocks(a: AESBlock, b: AESBlock): AESBlock {
   return out;
 }
 
-function keystream(S: AegisState): AESBlock {
+/**
+ * The keystream block z = S1 ^ S4 ^ S5 ^ (S2 & S3), per
+ * draft-irtf-cfrg-aegis-aead-18 Section 4.6. Exported so the state-machine
+ * exhibit can show where ciphertext bytes actually come from.
+ */
+export function keystream(S: AegisState): AESBlock {
   return xorBlocks(xorBlocks(xorBlocks(S[1], S[4]), S[5]), andBlocks(S[2], S[3]));
 }
 
 /**
  * The AEGIS update function - the permutation.
+ * draft-irtf-cfrg-aegis-aead-18 Section 4.3.
  */
 export function update(S: AegisState, M: AESBlock): AegisState {
   const nextS0 = aesRound(S[5], xorBlocks(S[0], M));
@@ -61,7 +68,7 @@ export type TagLength = 16 | 32;
  * Seeds the six state blocks from K0/K1, N0/N1, and the constants C0/C1,
  * then runs the update function 16 times (4 passes over the 4-block
  * injection schedule K0, K1, K0^N0, K1^N1) to diffuse them, per
- * draft-irtf-cfrg-aegis-aead-18 Section 4.4.2.
+ * draft-irtf-cfrg-aegis-aead-18 Section 4.4.
  */
 export function initialize(key: Uint8Array, nonce: Uint8Array): AegisState {
   ensureLength(key, 32, 'key');
@@ -93,7 +100,47 @@ export function initialize(key: Uint8Array, nonce: Uint8Array): AegisState {
 }
 
 /**
+ * Like `initialize`, but returns every intermediate state: the seeded state
+ * followed by the state after each of the 16 initialization updates
+ * (17 entries total, last one identical to `initialize`'s result).
+ *
+ * Exists for the avalanche visualization, which needs to show diffusion
+ * per update step; `initialize` stays allocation-light for the hot path.
+ */
+export function initializeSteps(key: Uint8Array, nonce: Uint8Array): AegisState[] {
+  ensureLength(key, 32, 'key');
+  ensureLength(nonce, 32, 'nonce');
+
+  const K0 = key.slice(0, 16);
+  const K1 = key.slice(16, 32);
+  const N0 = nonce.slice(0, 16);
+  const N1 = nonce.slice(16, 32);
+
+  let S: AegisState = [
+    xorBlocks(K0, N0),
+    xorBlocks(K1, N1),
+    cloneBlock(C1),
+    cloneBlock(C0),
+    xorBlocks(K0, C0),
+    xorBlocks(K1, C1),
+  ];
+
+  const injections: AESBlock[] = [K0, K1, xorBlocks(K0, N0), xorBlocks(K1, N1)];
+  const steps: AegisState[] = [S];
+
+  for (let i = 0; i < 4; i += 1) {
+    for (const inject of injections) {
+      S = update(S, inject);
+      steps.push(S);
+    }
+  }
+
+  return steps;
+}
+
+/**
  * Absorb an associated data block (no ciphertext output).
+ * draft-irtf-cfrg-aegis-aead-18 Section 4.5.
  */
 export function absorb(S: AegisState, ad: AESBlock): AegisState {
   return update(S, ad);
@@ -145,7 +192,7 @@ function writeLE64(out: Uint8Array, offset: number, value: bigint): void {
  * Absorbs the associated-data and message bit lengths (XORed into S3),
  * runs 7 closing updates, then folds the state into a tag. A 128-bit tag
  * is the XOR of all six blocks; a 256-bit tag concatenates (S0^S1^S2) with
- * (S3^S4^S5), per draft-irtf-cfrg-aegis-aead-18 Section 4.4.6.
+ * (S3^S4^S5), per draft-irtf-cfrg-aegis-aead-18 Section 4.9.
  */
 export function finalize(
   S: AegisState,
@@ -229,21 +276,30 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
- * High-level decrypt API.
- * Returns plaintext on success, null on tag mismatch.
+ * Result of `aegis256DecryptDetailed`: the plaintext (or null on tag
+ * mismatch) plus the tag this implementation computed over the ciphertext.
+ *
+ * Exposing the computed tag on failure is deliberately NOT something a
+ * production API should do — it exists so the demo can show a learner *how*
+ * the tags diverge (every byte, thanks to avalanche), not just that they do.
  */
-export function aegis256Decrypt(
+export interface DecryptDetail {
+  plaintext: Uint8Array | null;
+  computedTag: Uint8Array;
+}
+
+/**
+ * High-level decrypt API with teaching detail.
+ * Returns the plaintext (null on tag mismatch) and the computed tag.
+ */
+export function aegis256DecryptDetailed(
   key: Uint8Array,
   nonce: Uint8Array,
   ad: Uint8Array,
   ciphertext: Uint8Array,
   tag: Uint8Array,
   tagLength: TagLength = 16,
-): Uint8Array | null {
-  if (tag.length !== tagLength) {
-    return null;
-  }
-
+): DecryptDetail {
   let state = initialize(key, nonce);
   state = absorbData(state, ad);
 
@@ -266,9 +322,22 @@ export function aegis256Decrypt(
   }
 
   const computedTag = finalize(state, BigInt(ad.length * 8), BigInt(ciphertext.length * 8), tagLength);
-  if (!constantTimeEqual(computedTag, tag)) {
-    return null;
-  }
+  const authentic = tag.length === tagLength && constantTimeEqual(computedTag, tag);
 
-  return concatBytes(chunks);
+  return { plaintext: authentic ? concatBytes(chunks) : null, computedTag };
+}
+
+/**
+ * High-level decrypt API.
+ * Returns plaintext on success, null on tag mismatch.
+ */
+export function aegis256Decrypt(
+  key: Uint8Array,
+  nonce: Uint8Array,
+  ad: Uint8Array,
+  ciphertext: Uint8Array,
+  tag: Uint8Array,
+  tagLength: TagLength = 16,
+): Uint8Array | null {
+  return aegis256DecryptDetailed(key, nonce, ad, ciphertext, tag, tagLength).plaintext;
 }

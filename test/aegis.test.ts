@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type TagLength,
   aegis256Decrypt,
+  aegis256DecryptDetailed,
   aegis256Encrypt,
   constantTimeEqual,
   initialize,
@@ -159,6 +160,25 @@ describe('AEGIS-256 API behaviour', () => {
     for (let i = 0; i < 6; i += 1) {
       expect(constantTimeEqual(a[i], b[i])).toBe(true);
     }
+  });
+
+  it('aegis256DecryptDetailed exposes a matching computed tag on success', () => {
+    const msg = hexToBytes(vector1.msg ?? '');
+    const { ciphertext, tag } = aegis256Encrypt(key, nonce, ad, msg, 16);
+    const detail = aegis256DecryptDetailed(key, nonce, ad, ciphertext, tag, 16);
+    expect(detail.plaintext).not.toBeNull();
+    expect(bytesToHex(detail.computedTag)).toBe(bytesToHex(tag));
+  });
+
+  it('aegis256DecryptDetailed still surfaces the computed tag on a forgery', () => {
+    const msg = hexToBytes(vector1.msg ?? '');
+    const { ciphertext, tag } = aegis256Encrypt(key, nonce, ad, msg, 16);
+    const forged = tag.slice();
+    forged[0] ^= 0x01;
+    const detail = aegis256DecryptDetailed(key, nonce, ad, ciphertext, forged, 16);
+    expect(detail.plaintext).toBeNull();
+    // The computed tag is the honest one - it matches the real encryption tag.
+    expect(bytesToHex(detail.computedTag)).toBe(bytesToHex(tag));
   });
 
   it('constantTimeEqual reports equality and inequality correctly', () => {

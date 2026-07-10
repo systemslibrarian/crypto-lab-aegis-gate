@@ -384,6 +384,342 @@ ul {
   color: var(--muted);
 }
 
+ul a,
+.note a,
+.panel p a {
+  color: var(--cyan);
+}
+
+/* "Predict before you click" prompts */
+.predict {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.92rem;
+  font-style: italic;
+}
+
+.predict::before {
+  content: 'Predict: ';
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Tamper / tag-mismatch hex views */
+.hexdiff {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--red);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.24);
+  padding: 0.55rem 0.7rem;
+  overflow-wrap: anywhere;
+}
+
+.hexdiff-label {
+  color: var(--muted);
+}
+
+.hexdiff mark {
+  background: rgba(255, 51, 102, 0.4);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* Exhibit 2: state machine layout with pseudocode pane */
+.sm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.spec-pane {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.spec-pane h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--cyan);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.spec-block {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 0.5rem 0.6rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.spec-block h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.8rem;
+  font-family: var(--mono);
+}
+
+.spec-block h4 a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.spec-block h4 a:hover {
+  text-decoration: underline;
+}
+
+.spec-block pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-x: auto;
+}
+
+.spec-block[data-active] {
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.25);
+}
+
+.spec-block[data-active] pre {
+  color: var(--text);
+}
+
+/* Dataflow diagram */
+.dataflow {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.dataflow .df-box {
+  fill: rgba(0, 212, 255, 0.1);
+  stroke: rgba(0, 212, 255, 0.55);
+  stroke-width: 1.5;
+}
+
+.dataflow .df-z {
+  fill: rgba(255, 215, 0, 0.12);
+  stroke: rgba(255, 215, 0, 0.65);
+}
+
+.dataflow .df-text {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.dataflow .df-small {
+  font-size: 10px;
+}
+
+.dataflow .df-box-label {
+  fill: var(--cyan);
+  font-weight: 700;
+  font-size: 14px;
+  text-anchor: middle;
+}
+
+.dataflow .df-z + .df-box-label,
+.dataflow .df-ks .df-box-label {
+  fill: var(--gold);
+}
+
+.dataflow .flow {
+  fill: none;
+  stroke-width: 2;
+}
+
+.dataflow .flow-ring {
+  stroke: var(--cyan);
+  color: var(--cyan);
+}
+
+.dataflow .flow-wrap {
+  stroke: var(--magenta);
+  color: var(--magenta);
+}
+
+.dataflow .flow-m {
+  stroke: var(--green);
+  color: var(--green);
+}
+
+.dataflow .flow-ks {
+  stroke: var(--gold);
+  color: var(--gold);
+  stroke-dasharray: 5 4;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dataflow.pulse-ring .flow-ring,
+  .dataflow.pulse-m .flow-m,
+  .dataflow.pulse-ks .flow-ks {
+    stroke-dasharray: 8 8;
+    animation: flow-pulse 0.9s ease-out;
+  }
+
+  @keyframes flow-pulse {
+    from {
+      stroke-dashoffset: 48;
+      stroke-width: 3.5;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+      stroke-width: 2;
+    }
+  }
+}
+
+/* Byte-level state diff */
+.byte {
+  display: inline;
+}
+
+.byte.changed {
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.16);
+  border-radius: 3px;
+}
+
+.chg {
+  font-size: 0.66rem;
+  font-weight: 400;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.keystream {
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 215, 0, 0.07);
+  padding: 0.55rem 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.keystream code {
+  color: var(--gold);
+}
+
+.keystream-note {
+  font-size: 0.72rem;
+}
+
+/* Avalanche heatmap */
+.heatmap {
+  font-family: var(--mono);
+}
+
+.heatmap td,
+.heatmap th {
+  text-align: center;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.45rem;
+}
+
+.heatmap tbody th {
+  text-align: left;
+}
+
+/* Exhibit 3: nonce reuse */
+.nr-output {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.24);
+  padding: 0.7rem;
+}
+
+.nr-row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.nr-label {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.nr-row code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.nr-verdict {
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font-weight: 600;
+}
+
+.nr-verdict.danger {
+  border-left: 4px solid var(--red);
+  background: rgba(255, 51, 102, 0.14);
+}
+
+.nr-verdict.ok {
+  border-left: 4px solid var(--green);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.nr-recovered mark {
+  background: rgba(255, 51, 102, 0.35);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.nr-garbage {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.nr-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Exhibit 4: birthday-bound explorer */
+.bd-label {
+  font-size: 1rem;
+}
+
+.bd-label sup {
+  color: var(--cyan);
+  font-family: var(--mono);
+}
+
+input[type='range'] {
+  padding: 0;
+  accent-color: var(--cyan);
+}
+
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  color: var(--text);
+  background: #072032;
+  font-family: var(--mono);
+  font-size: 1rem;
+}
+
 @media (max-width: 840px) {
   .shell {
     width: min(1120px, 100% - 1rem);
@@ -397,6 +733,15 @@ ul {
   .state-hexagon {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-height: auto;
+  }
+
+  .sm-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .nr-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
   }
 
   .p0,

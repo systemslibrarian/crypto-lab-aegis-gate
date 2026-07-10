@@ -78,16 +78,93 @@ export const DRAFT_VECTORS: readonly DraftVector[] = [
   },
 ] as const;
 
+/**
+ * Official must-reject vectors from draft-irtf-cfrg-aegis-aead-18,
+ * Appendix A.2 (Test Vectors 6-9): a swapped key/nonce, a flipped
+ * ciphertext bit, altered AD, and a flipped tag bit. A conformant
+ * implementation must refuse to decrypt every one of them.
+ *
+ * Kept in sync with test/vectors/aegis-256-test-vectors.json by
+ * test/conformance.test.ts.
+ */
+export interface RejectionVector {
+  name: string;
+  /** What the vector tampers with, for display. */
+  tampered: string;
+  key: string;
+  nonce: string;
+  ad: string;
+  ct: string;
+  tag128: string;
+  tag256: string;
+}
+
+export const REJECTION_VECTORS: readonly RejectionVector[] = [
+  {
+    name: 'Test Vector 6',
+    tampered: 'key and nonce swapped',
+    key: '1000020000000000000000000000000000000000000000000000000000000000',
+    nonce: '1001000000000000000000000000000000000000000000000000000000000000',
+    ad: '0001020304050607',
+    ct: 'f373079ed84b2709faee37358458',
+    tag128: 'c60b9c2d33ceb058f96e6dd03c215652',
+    tag256: '8c1cc703c81281bee3f6d9966e14948b4a175b2efbdc31e61a98b4465235c2d9',
+  },
+  {
+    name: 'Test Vector 7',
+    tampered: 'ciphertext altered',
+    key: '1001000000000000000000000000000000000000000000000000000000000000',
+    nonce: '1000020000000000000000000000000000000000000000000000000000000000',
+    ad: '0001020304050607',
+    ct: 'f373079ed84b2709faee37358459',
+    tag128: 'c60b9c2d33ceb058f96e6dd03c215652',
+    tag256: '8c1cc703c81281bee3f6d9966e14948b4a175b2efbdc31e61a98b4465235c2d9',
+  },
+  {
+    name: 'Test Vector 8',
+    tampered: 'associated data altered',
+    key: '1001000000000000000000000000000000000000000000000000000000000000',
+    nonce: '1000020000000000000000000000000000000000000000000000000000000000',
+    ad: '0001020304050608',
+    ct: 'f373079ed84b2709faee37358458',
+    tag128: 'c60b9c2d33ceb058f96e6dd03c215652',
+    tag256: '8c1cc703c81281bee3f6d9966e14948b4a175b2efbdc31e61a98b4465235c2d9',
+  },
+  {
+    name: 'Test Vector 9',
+    tampered: 'tag altered',
+    key: '1001000000000000000000000000000000000000000000000000000000000000',
+    nonce: '1000020000000000000000000000000000000000000000000000000000000000',
+    ad: '0001020304050607',
+    ct: 'f373079ed84b2709faee37358458',
+    tag128: 'c60b9c2d33ceb058f96e6dd03c215653',
+    tag256: '8c1cc703c81281bee3f6d9966e14948b4a175b2efbdc31e61a98b4465235c2da',
+  },
+] as const;
+
 export interface ConformanceRow {
   name: string;
   ctOk: boolean;
   tag128Ok: boolean;
   tag256Ok: boolean;
+  /** Decrypt returns the original plaintext for both tag lengths. */
+  roundTripOk: boolean;
+  pass: boolean;
+}
+
+export interface RejectionRow {
+  name: string;
+  tampered: string;
+  /** Decrypt refused the forgery with a 128-bit tag. */
+  rejected128: boolean;
+  /** Decrypt refused the forgery with a 256-bit tag. */
+  rejected256: boolean;
   pass: boolean;
 }
 
 export interface ConformanceReport {
   rows: ConformanceRow[];
+  rejections: RejectionRow[];
   passed: number;
   total: number;
   allPass: boolean;
