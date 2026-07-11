@@ -311,10 +311,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </ul>
     </section>
   </main>
-<footer style="margin-top:3rem;padding:2rem 1rem;border-top:1px solid rgba(128,128,128,.25);text-align:center;font-size:.85rem;line-height:1.9;opacity:.85;font-family:ui-monospace,Menlo,Consolas,monospace">
+<footer style="margin-top:3rem;padding:2rem 1rem;border-top:1px solid rgba(128,128,128,.25);text-align:center;font-size:.85rem;line-height:1.9;font-family:ui-monospace,Menlo,Consolas,monospace">
   <div><strong>Related demos:</strong> <a href="https://systemslibrarian.github.io/crypto-lab-aes-modes/" style="color:#35d6bb">aes-modes</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-ascon/" style="color:#35d6bb">ascon</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-chacha20-stream/" style="color:#35d6bb">chacha20-stream</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-shadow-vault/" style="color:#35d6bb">shadow-vault</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-nonce-guard/" style="color:#35d6bb">nonce-guard</a></div>
   <div style="margin-top:.5rem"><a href="https://github.com/systemslibrarian/crypto-lab-aegis-gate" style="color:#35d6bb">Source on GitHub</a> &middot; <a href="https://crypto-lab.systemslibrarian.dev/" style="color:#35d6bb">More crypto-lab demos</a></div>
-  <div style="margin-top:.75rem;opacity:.75">&ldquo;So whether you eat or drink or whatever you do, do it all for the glory of God.&rdquo; &mdash; 1 Corinthians 10:31</div>
+  <div style="margin-top:.75rem;color:var(--muted)">&ldquo;So whether you eat or drink or whatever you do, do it all for the glory of God.&rdquo; &mdash; 1 Corinthians 10:31</div>
 </footer>
 `;
 
@@ -635,7 +635,9 @@ must<HTMLButtonElement>('#avalanche-btn').addEventListener('click', () => {
         const cells = step.perBlockBits
           .map((bits) => {
             const alpha = Math.min(1, bits / 128);
-            return `<td style="background:rgba(0,212,255,${(alpha * 0.55).toFixed(3)})">${bits}</td>`;
+            // Cap the tint at 0.45: at 0.55 the near-white cell text drops to
+            // ~3.8:1 against the brightest cells; 0.45 keeps it near 5:1.
+            return `<td style="background-color:rgba(0,212,255,${(alpha * 0.45).toFixed(3)})">${bits}</td>`;
           })
           .join('');
         const pct = ((step.totalBits / STATE_BITS) * 100).toFixed(1);

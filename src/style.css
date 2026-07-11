@@ -12,6 +12,15 @@
   --line: #1d455c;
   --mono: 'IBM Plex Mono', 'Cascadia Code', Consolas, monospace;
   --display: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  /* This lab is dark-only: tell the UA so native widgets (select popups,
+     scrollbars, form controls) render dark too. */
+  color-scheme: dark;
+}
+
+/* Paint the canvas itself: WebKit reports body->canvas background propagation
+   as transparent, which breaks automated contrast checks. */
+html {
+  background-color: var(--bg);
 }
 
 * {
@@ -35,7 +44,7 @@ body {
   top: -40px;
   left: 0.8rem;
   z-index: 1000;
-  background: #06293a;
+  background-color: #06293a;
   color: var(--text);
   border: 1px solid var(--cyan);
   border-radius: 8px;
@@ -84,7 +93,7 @@ h1 {
 .warning {
   margin-top: 0.8rem;
   border-left: 4px solid var(--red);
-  background: rgba(255, 51, 102, 0.12);
+  background-color: rgba(255, 51, 102, 0.12);
   padding: 0.7rem 0.9rem;
   border-radius: 10px;
 }
@@ -111,14 +120,14 @@ h1 {
 
 .conformance-badge[data-state='pass'] {
   color: #02180f;
-  background: var(--green);
+  background-color: var(--green);
   border-color: var(--green);
 }
 
 .conformance-badge[data-state='fail'] {
   /* Dark ink on red clears AA (~6:1); white on this red would be ~3.5:1. */
   color: #1a0008;
-  background: var(--red);
+  background-color: var(--red);
   border-color: var(--red);
 }
 
@@ -159,7 +168,7 @@ h1 {
 }
 
 .conformance-table thead th {
-  background: rgba(0, 212, 255, 0.12);
+  background-color: rgba(0, 212, 255, 0.12);
 }
 
 .conformance-table .ok {
@@ -168,7 +177,9 @@ h1 {
 }
 
 .conformance-table .fail {
-  color: var(--red);
+  /* Lighter tint of --red: #ff3366 is only ~4.2:1 against the hero's
+     cyan-tinted gradient; #ff5c80 clears AA at ~5:1. */
+  color: #ff5c80;
   font-weight: 700;
 }
 
@@ -218,7 +229,7 @@ input {
   border-radius: 10px;
   padding: 0.55rem 0.65rem;
   color: var(--text);
-  background: #072032;
+  background-color: #072032;
   font-family: var(--mono);
   font-size: 1rem;
 }
@@ -257,7 +268,7 @@ textarea:focus-visible,
 .status {
   margin: 0;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.24);
+  background-color: rgba(0, 0, 0, 0.24);
   border: 1px solid var(--line);
   padding: 0.75rem;
   white-space: pre-wrap;
@@ -276,7 +287,7 @@ textarea:focus-visible,
 .state-card {
   border-radius: 12px;
   border: 1px solid rgba(0, 212, 255, 0.4);
-  background: rgba(0, 212, 255, 0.1);
+  background-color: rgba(0, 212, 255, 0.1);
   padding: 0.7rem;
   min-height: 92px;
 }
@@ -335,7 +346,7 @@ td {
 }
 
 th {
-  background: rgba(0, 212, 255, 0.12);
+  background-color: rgba(0, 212, 255, 0.12);
 }
 
 .note {
@@ -371,11 +382,11 @@ th {
 }
 
 .bar.aegis {
-  background: var(--green);
+  background-color: var(--green);
 }
 
 .bar.gcm {
-  background: var(--gold);
+  background-color: var(--gold);
 }
 
 ul {
@@ -411,7 +422,7 @@ ul a,
   border: 1px solid var(--line);
   border-left: 4px solid var(--red);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.24);
+  background-color: rgba(0, 0, 0, 0.24);
   padding: 0.55rem 0.7rem;
   overflow-wrap: anywhere;
 }
@@ -421,7 +432,7 @@ ul a,
 }
 
 .hexdiff mark {
-  background: rgba(255, 51, 102, 0.4);
+  background-color: rgba(255, 51, 102, 0.4);
   color: var(--text);
   border-radius: 3px;
   padding: 0 1px;
@@ -452,7 +463,7 @@ ul a,
 .spec-block {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.22);
+  background-color: rgba(0, 0, 0, 0.22);
   padding: 0.5rem 0.6rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -584,7 +595,7 @@ ul a,
 
 .byte.changed {
   color: var(--gold);
-  background: rgba(255, 215, 0, 0.16);
+  background-color: rgba(255, 215, 0, 0.16);
   border-radius: 3px;
 }
 
@@ -598,7 +609,7 @@ ul a,
 .keystream {
   border: 1px solid rgba(255, 215, 0, 0.4);
   border-radius: 10px;
-  background: rgba(255, 215, 0, 0.07);
+  background-color: rgba(255, 215, 0, 0.07);
   padding: 0.55rem 0.7rem;
   font-family: var(--mono);
   font-size: 0.8rem;
@@ -636,7 +647,7 @@ ul a,
   gap: 0.4rem;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.24);
+  background-color: rgba(0, 0, 0, 0.24);
   padding: 0.7rem;
 }
 
@@ -668,24 +679,25 @@ ul a,
 
 .nr-verdict.danger {
   border-left: 4px solid var(--red);
-  background: rgba(255, 51, 102, 0.14);
+  background-color: rgba(255, 51, 102, 0.14);
 }
 
 .nr-verdict.ok {
   border-left: 4px solid var(--green);
-  background: rgba(0, 255, 136, 0.1);
+  background-color: rgba(0, 255, 136, 0.1);
 }
 
 .nr-recovered mark {
-  background: rgba(255, 51, 102, 0.35);
+  background-color: rgba(255, 51, 102, 0.35);
   color: var(--text);
   border-radius: 3px;
   padding: 0 2px;
 }
 
 .nr-garbage {
+  /* No opacity: the muted color alone marks the garbage tail while
+     keeping the text above the 4.5:1 AA contrast floor. */
   color: var(--muted);
-  opacity: 0.5;
 }
 
 .nr-hint {
@@ -713,11 +725,17 @@ select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 0.55rem 0.65rem;
+  padding: 0.55rem 1.8rem 0.55rem 0.65rem;
   color: var(--text);
-  background: #072032;
+  background-color: #072032;
   font-family: var(--mono);
   font-size: 1rem;
+  /* Replace the native arrow with a neutral chevron so the custom-styled
+     control looks consistent across engines. */
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%238b949e' stroke-width='2' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
 }
 
 @media (max-width: 840px) {
