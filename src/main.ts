@@ -128,10 +128,18 @@ const dataflowSvg = `
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <a class="skip-link" href="#exhibit-1">Skip to interactive demo</a>
   <main class="shell">
-    <header class="hero">
-      <p class="eyebrow">crypto-lab-aegis-gate</p>
-      <h1>AEGIS-256: Fast AES-Based AEAD</h1>
-      <p class="subtitle">Six-state AES sponge construction, implemented from the CFRG draft and verified with official vectors.</p>
+    <header class="cl-hero">
+      <div class="cl-hero-main">
+        <h1 class="cl-hero-title">AEGIS-256</h1>
+        <p class="cl-hero-sub">AEAD &middot; AES-round sponge &middot; CFRG draft</p>
+        <p class="cl-hero-desc">Encrypt, decrypt, and tamper with a message through a 768-bit six-block AEGIS-256 state, verified live against the official CFRG draft vectors.</p>
+      </div>
+      <aside class="cl-hero-why" aria-label="Why it matters">
+        <span class="cl-hero-why-label">WHY IT MATTERS</span>
+        <p class="cl-hero-why-text">AEGIS-256's 256-bit nonce and one-time nonce discipline are what keep it secure at wire speed. Reuse a key+nonce pair and confidentiality and forgery-resistance collapse &mdash; Exhibit 3 shows the wreckage.</p>
+      </aside>
+    </header>
+    <div class="hero-strip">
       <div class="warning">Nonce reuse is catastrophic. Never encrypt two messages with the same key+nonce pair &mdash; Exhibit 3 shows you exactly why.</div>
       <div id="conformance" class="conformance" role="status" aria-live="polite">
         <span class="conformance-badge" data-state="pending">checking&hellip;</span>
@@ -150,7 +158,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <tbody id="conformance-reject-body"></tbody>
         </table>
       </div>
-    </header>
+    </div>
 
     <section class="panel" id="exhibit-1">
       <h2>Exhibit 1: Key / Nonce / Message</h2>
