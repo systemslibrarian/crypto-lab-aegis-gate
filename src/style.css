@@ -399,6 +399,187 @@ ul a,
   color: var(--cyan);
 }
 
+/* "New to AEAD?" primer (collapsible) */
+.primer {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cyan);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-soft));
+  padding: 0.6rem 1rem;
+}
+
+.primer > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cyan);
+  font-size: 1.02rem;
+  padding: 0.25rem 0;
+}
+
+.primer > summary:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.primer-body {
+  margin-top: 0.4rem;
+}
+
+.primer-body p {
+  margin: 0.55rem 0;
+  color: var(--muted);
+}
+
+.primer-lead {
+  color: var(--text) !important;
+}
+
+.primer-terms {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.9rem;
+  margin: 0.6rem 0;
+}
+
+.primer-terms dt {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--cyan);
+  font-size: 0.9rem;
+}
+
+.primer-terms dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.primer-foot {
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+}
+
+@media (max-width: 560px) {
+  .primer-terms {
+    grid-template-columns: 1fr;
+    gap: 0.1rem 0;
+  }
+
+  .primer-terms dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Cross-link from a failed tamper to the avalanche exhibit */
+.why-link {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.why-link a {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* Exhibit 2 sub-panel: one AES round, stage by stage */
+.aesround {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--magenta);
+  border-radius: 12px;
+  background-color: rgba(0, 0, 0, 0.22);
+  padding: 0.6rem 0.9rem;
+}
+
+.aesround > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text);
+  padding: 0.25rem 0;
+}
+
+.aesround > summary:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.aesround-body {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.aesround-body code {
+  font-family: var(--mono);
+  color: var(--cyan);
+}
+
+.ar-stage-label {
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: var(--text);
+  background-color: rgba(255, 0, 170, 0.1);
+  border: 1px solid rgba(255, 0, 170, 0.4);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.ar-grids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.ar-grid {
+  margin: 0;
+}
+
+.ar-grid figcaption {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+
+.ar-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 2.1rem);
+  grid-auto-rows: 2.1rem;
+  gap: 3px;
+}
+
+.ar-cell {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text);
+  background-color: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  border-radius: 5px;
+}
+
+.ar-cell.ar-hot {
+  color: #1a0008;
+  background-color: var(--gold);
+  border-color: var(--gold);
+  font-weight: 700;
+}
+
+.ar-explain {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.ar-explain strong {
+  color: var(--cyan);
+}
+
 /* "Predict before you click" prompts */
 .predict {
   margin: 0;

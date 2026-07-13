@@ -21,16 +21,26 @@ happen rather than take on trust. The same vectors are exercised in the test
 suite (`npm test`), and a guard test keeps the in-browser copy byte-identical
 to the authoritative fixture so the two cannot drift.
 
+A collapsible **"New to AEAD?" primer** sits above Exhibit 1, defining
+plaintext, ciphertext, tag, nonce, and associated data in plain language —
+before any hex appears — so a newcomer has an on-ramp and a cryptographer can
+skip it.
+
 Six interactive exhibits go beyond a byte dump:
 
 - **Encrypt / tamper (Exhibit 1)** — encrypt your own input with either tag
   length, flip a single bit of ciphertext or tag and see exactly where it
-  landed, and watch the recomputed tag diverge in nearly every byte. Any
-  scenario is shareable as a URL, so a class can open one link in a known state.
+  landed, and watch the recomputed tag diverge in nearly every byte. A failed
+  tamper links straight to the avalanche in Exhibit 2 that explains why one bit
+  changes the whole tag. Any scenario is shareable as a URL, so a class can open
+  one link in a known state.
 - **The state machine, live (Exhibit 2)** — step Init / Absorb / Enc / Finalize
   on the real implementation, with an animated dataflow diagram, byte-level
   diff highlighting between steps, the extracted keystream `Z`, and the
   verbatim draft-18 pseudocode alongside, highlighting whichever function ran.
+  A collapsible **"open the black box"** sub-panel runs one real AES round on the
+  live S0 block stage by stage — SubBytes (S-box), ShiftRows, MixColumns, and the
+  round-key XOR — so "AES-based" becomes a mechanism you watch, not an assertion.
   An avalanche heatmap shows one flipped nonce bit diffusing to ~50% of the
   768-bit state across the 16 setup updates.
 - **The nonce-reuse catastrophe (Exhibit 3)** — encrypt two messages under the

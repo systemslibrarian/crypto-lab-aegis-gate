@@ -11,6 +11,7 @@ import {
   initialize,
   keystream,
 } from './aegis';
+import { type AesRoundTrace, shiftRowsSourceMap, traceAesRound } from './aes-round-vis';
 import { STATE_BITS, avalancheTrace } from './avalanche';
 import { runComparison } from './benchmark';
 import { nonceCollisionProbability } from './birthday';
@@ -160,6 +161,22 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
     </div>
 
+    <details class="primer" id="aead-primer">
+      <summary>New to AEAD? Start here (30-second primer)</summary>
+      <div class="primer-body">
+        <p class="primer-lead"><strong>What AEGIS gives you: confidentiality + a tamper-evident seal, from AES rounds run very fast.</strong></p>
+        <p>Authenticated Encryption with Associated Data (AEAD) does two jobs at once, so you never have to bolt encryption and integrity together yourself:</p>
+        <dl class="primer-terms">
+          <dt>Plaintext</dt><dd>the secret message you start with.</dd>
+          <dt>Ciphertext</dt><dd>the scrambled output. Without the key it looks like noise; that is the <em>confidentiality</em> half.</dd>
+          <dt>Tag</dt><dd>a short fingerprint (128 or 256 bits) computed over everything. On decryption AEGIS recomputes it and rejects the message if even one bit was altered &mdash; that is the <em>tamper-evident seal</em>. A wrong tag means "do not trust this," not "here is a slightly wrong message."</dd>
+          <dt>Nonce</dt><dd>a "number used once" that makes each encryption unique so the same key can encrypt many messages safely. AEGIS-256's nonce is a roomy 256 bits &mdash; the reason random nonces stay safe for practically forever (Exhibit 4).</dd>
+          <dt>Associated data (AD)</dt><dd>extra context (headers, a packet number) that is <em>authenticated but not encrypted</em>: it is covered by the tag but left readable. Tamper with it and the tag still fails.</dd>
+        </dl>
+        <p class="primer-foot">Under the hood, AEGIS keeps a 768-bit state and stirs it with the <strong>AES round function</strong> &mdash; the same mixing step inside AES. Exhibit 2 opens that step up so you can watch it mix. Everything below runs the real algorithm in your browser; nothing here is faked.</p>
+      </div>
+    </details>
+
     <section class="panel" id="exhibit-1">
       <h2>Exhibit 1: Key / Nonce / Message</h2>
       <div class="grid2">
@@ -192,6 +209,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div id="tag-diff" class="hexdiff" hidden></div>
       <div id="tag-compare" class="hexdiff" hidden></div>
       <pre id="decrypt-status" class="status" role="status" aria-live="polite">Ready.</pre>
+      <p id="why-avalanche" class="why-link" hidden><a href="#exhibit-2">Why does flipping one bit change (almost) the whole tag? See the avalanche in Exhibit 2 &rarr;</a></p>
     </section>
 
     <section class="panel" id="exhibit-2">
@@ -219,6 +237,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           ${specPaneHtml}
         </aside>
       </div>
+
+      <details class="aesround" id="aesround-panel">
+        <summary>Open the black box: watch <strong>one</strong> AES round mix</summary>
+        <div class="aesround-body">
+          <p class="note">Every arrow in the diagram above is one call to <code>AESRound(A, B)</code> &mdash; AEGIS runs six per Update. It is not magic: it is the standard AES round, <code>MixColumns(ShiftRows(SubBytes(A))) &#8853; B</code>. Below, the current S0 block is put through that round <em>for real</em> (same functions the rest of the page uses), one stage at a time, so you can see <em>why</em> it diffuses. The 16 bytes are drawn as AES's column-major 4&times;4 grid.</p>
+          <p class="predict">Predict: after SubBytes + ShiftRows + MixColumns, how many of the 16 output bytes still match the input?</p>
+          <div class="actions">
+            <button id="ar-step" type="button">Step Through One AES Round</button>
+            <button id="ar-reset" type="button">Reset</button>
+          </div>
+          <div id="ar-stage-label" class="ar-stage-label" role="status" aria-live="polite">Stage 0 of 4 &mdash; input block, before any mixing.</div>
+          <div class="ar-grids" id="ar-grids"></div>
+          <p id="ar-explain" class="ar-explain">
+            <strong>SubBytes</strong> replaces each byte via the AES S-box (a fixed, nonlinear 256-entry lookup) &mdash; this is the confusion step, so no output byte is a simple function of one input byte.
+            <strong>ShiftRows</strong> rotates the grid's rows so bytes move across columns.
+            <strong>MixColumns</strong> combines the four bytes of each column in GF(2^8) &mdash; the diffusion step, so one changed input byte spreads across a whole column. Together, one round already scatters a single-bit change widely; AEGIS chains many, which is the avalanche you see below.
+          </p>
+        </div>
+      </details>
 
       <h3>Avalanche: what the 16 setup updates buy</h3>
       <p class="predict">Predict: flip one bit of the 256-bit nonce &mdash; after how many updates will roughly half of the 768 state bits differ?</p>
@@ -337,6 +374,7 @@ const ctDiff = must<HTMLDivElement>('#ct-diff');
 const tagDiff = must<HTMLDivElement>('#tag-diff');
 const tagCompare = must<HTMLDivElement>('#tag-compare');
 const decryptStatus = must<HTMLPreElement>('#decrypt-status');
+const whyAvalanche = must<HTMLParagraphElement>('#why-avalanche');
 const stateHexagon = must<HTMLDivElement>('#state-hexagon');
 const stateLog = must<HTMLPreElement>('#state-log');
 const keystreamStrip = must<HTMLDivElement>('#keystream-strip');
@@ -451,6 +489,7 @@ function hideTamperViews(): void {
   ctDiff.hidden = true;
   tagDiff.hidden = true;
   tagCompare.hidden = true;
+  whyAvalanche.hidden = true;
 }
 
 must<HTMLButtonElement>('#gen-key').addEventListener('click', () => {
@@ -512,6 +551,7 @@ must<HTMLButtonElement>('#decrypt-btn').addEventListener('click', () => {
 
     if (plaintext === null) {
       renderHexDiff(tagCompare, 'Recomputed tag vs the tag presented', tag, computedTag);
+      whyAvalanche.hidden = false;
       setStatus(
         'TAMPER DETECTED: tag mismatch. Decryption rejected.\nNote how the recomputed tag differs in (almost) every byte - one flipped input bit avalanches through the whole state.',
       );
@@ -519,6 +559,7 @@ must<HTMLButtonElement>('#decrypt-btn').addEventListener('click', () => {
     }
 
     tagCompare.hidden = true;
+    whyAvalanche.hidden = true;
     setStatus(`Decrypt OK: ${bytesToUtf8(plaintext)}`);
   } catch (error) {
     setStatus(`Error: ${(error as Error).message}`);
@@ -625,6 +666,99 @@ must<HTMLButtonElement>('#sm-finalize').addEventListener('click', () => {
   pulseFlow(['ring']);
   highlightSpec(['finalize', 'update']);
   stateLog.textContent = `Finalize complete: absorbed the AD/message bit lengths into S3, ran 7 closing updates, folded the state.\nTag (${tag.length * 8}-bit): ${bytesToHex(tag)}`;
+});
+
+// --- Exhibit 2 sub-panel: one AES round, stage by stage -------------------
+// A fixed but non-trivial default block used when the state machine has not
+// been initialized yet, so the sub-panel is explorable on its own.
+const AR_DEFAULT_INPUT = Uint8Array.from(
+  { length: 16 },
+  (_, i) => (0x1f + i * 0x11) & 0xff,
+);
+const AR_DEFAULT_KEY = Uint8Array.from(
+  { length: 16 },
+  (_, i) => (0xa3 ^ (i * 0x0d)) & 0xff,
+);
+const AR_STAGE_NAMES = ['Input', 'SubBytes', 'ShiftRows', 'MixColumns', 'XOR round key'];
+const SHIFT_MAP = shiftRowsSourceMap();
+let arStage = 0;
+let arTrace: AesRoundTrace | null = null;
+
+/** AES column-major 4x4: byte index i sits at row i%4, column floor(i/4). */
+function renderAesGrid(
+  title: string,
+  block: Uint8Array,
+  highlight: (i: number) => boolean,
+): string {
+  let cells = '';
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      const i = col * 4 + row;
+      const hex = block[i].toString(16).padStart(2, '0');
+      cells += `<span class="ar-cell${highlight(i) ? ' ar-hot' : ''}">${hex}</span>`;
+    }
+  }
+  return `<figure class="ar-grid"><figcaption>${title}</figcaption><div class="ar-cells" role="img" aria-label="${title}: 4 by 4 grid of hex bytes">${cells}</div></figure>`;
+}
+
+function renderAesRoundStage(): void {
+  const grids = must<HTMLDivElement>('#ar-grids');
+  const label = must<HTMLDivElement>('#ar-stage-label');
+  const source = visualizationState ? visualizationState[0] : AR_DEFAULT_INPUT;
+  const roundKey = visualizationState ? visualizationState[1] : AR_DEFAULT_KEY;
+  arTrace = traceAesRound(source, roundKey);
+
+  const input = arTrace.input;
+  let html = renderAesGrid('Input (S0)', input, () => false);
+  let changedFromInput = 0;
+  let after: Uint8Array = input;
+  let note = '';
+
+  if (arStage >= 1) {
+    // SubBytes: every byte changes unless SBOX maps it to itself (never true
+    // for AES's S-box), so highlight bytes whose value moved.
+    after = arTrace.afterSub;
+    html += renderAesGrid('after SubBytes', after, (i) => after[i] !== input[i]);
+    note = 'each byte -> SBOX[byte] (nonlinear lookup)';
+  }
+  if (arStage >= 2) {
+    const before = after;
+    after = arTrace.afterShift;
+    // Highlight bytes that ShiftRows actually moved from another cell.
+    html += renderAesGrid('after ShiftRows', after, (i) => SHIFT_MAP[i] !== i && after[i] !== before[i]);
+    note = 'rows rotated -> bytes cross columns';
+  }
+  if (arStage >= 3) {
+    const before = after;
+    after = arTrace.afterMix;
+    html += renderAesGrid('after MixColumns', after, (i) => after[i] !== before[i]);
+    note = 'columns mixed in GF(2^8) -> diffusion';
+  }
+  if (arStage >= 4) {
+    after = arTrace.output;
+    html += renderAesGrid('XOR round key = output', after, (i) => after[i] !== arTrace!.afterMix[i]);
+    note = 'fold in block B (AEGIS folds Si-1 here)';
+  }
+
+  grids.innerHTML = html;
+  changedFromInput = Array.from(after, (b, i) => (b !== input[i] ? 1 : 0)).reduce<number>((a, n) => a + n, 0);
+  const unchanged = 16 - changedFromInput;
+  label.textContent =
+    arStage === 0
+      ? 'Stage 0 of 4 - input block, before any mixing.'
+      : `Stage ${arStage} of 4 - ${AR_STAGE_NAMES[arStage]}: ${note}. ${unchanged} of 16 bytes still match the original input.`;
+}
+
+renderAesRoundStage();
+
+must<HTMLButtonElement>('#ar-step').addEventListener('click', () => {
+  arStage = arStage >= 4 ? 4 : arStage + 1;
+  renderAesRoundStage();
+});
+
+must<HTMLButtonElement>('#ar-reset').addEventListener('click', () => {
+  arStage = 0;
+  renderAesRoundStage();
 });
 
 must<HTMLButtonElement>('#avalanche-btn').addEventListener('click', () => {
@@ -780,7 +914,7 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
       benchmarkChart.appendChild(row);
     }
 
-    benchmarkLog.textContent = `${lines.join('\n')}\n\nWeb Crypto is native and usually faster in browser demos. Native AEGIS with AES-NI/ARM crypto extensions is where AEGIS is designed to excel.`;
+    benchmarkLog.textContent = `${lines.join('\n')}\n\nWeb Crypto's AES-GCM is native C here while this AEGIS is interpreted TypeScript, so GCM wins this browser race. Why native AEGIS flips it: AEGIS's authentication is just extra AES rounds, which AES-NI runs in parallel with the encryption rounds; GCM's GHASH is a separate carry-less-multiply chain that runs serially after encryption. Give both hardware acceleration and AEGIS does its integrity work "for free" alongside the cipher, while GCM pays for GHASH on top.`;
   } catch (error) {
     benchmarkLog.textContent = `Benchmark failed: ${(error as Error).message}`;
   }
