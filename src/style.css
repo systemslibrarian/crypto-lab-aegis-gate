@@ -10,6 +10,12 @@
   --magenta: #ff00aa;
   --red: #ff3366;
   --line: #1d455c;
+  /* Control boundaries only. Text inputs, textareas and selects are filled with
+     #072032, which is 1.04-1.16:1 against the panel gradient behind them, so the
+     border is the sole boundary and WCAG 2.1 SC 1.4.11 requires 3:1. Buttons
+     already use the #2382a6 rim (3.3-3.7:1) and are unaffected; --line stays as-is
+     for decorative rules (panel outlines, table rules, spec blocks). */
+  --line-strong: #347ca5;
   --mono: 'IBM Plex Mono', 'Cascadia Code', Consolas, monospace;
   --display: 'Space Grotesk', 'Trebuchet MS', sans-serif;
   /* Fleet-standard aliases so the managed cl-hero block can reference the
@@ -221,7 +227,7 @@ label {
 textarea,
 input {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
   padding: 0.55rem 0.65rem;
   color: var(--text);
@@ -900,7 +906,7 @@ input[type='range'] {
 
 select {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
   padding: 0.55rem 1.8rem 0.55rem 0.65rem;
   color: var(--text);
