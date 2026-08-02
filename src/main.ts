@@ -13,7 +13,7 @@ import {
 } from './aegis';
 import { type AesRoundTrace, shiftRowsSourceMap, traceAesRound } from './aes-round-vis';
 import { STATE_BITS, avalancheTrace } from './avalanche';
-import { runComparison } from './benchmark';
+import { runComparison, summarizeComparison } from './benchmark';
 import { nonceCollisionProbability } from './birthday';
 import { runConformance } from './conformance';
 import { GUARANTEED_LEAK_BLOCKS, formatPrintable, leakedRunLength, recoverSibling } from './nonce-reuse';
@@ -914,7 +914,7 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
       benchmarkChart.appendChild(row);
     }
 
-    benchmarkLog.textContent = `${lines.join('\n')}\n\nWeb Crypto's AES-GCM is native C here while this AEGIS is interpreted TypeScript, so GCM wins this browser race. Why native AEGIS flips it: AEGIS's authentication is just extra AES rounds, which AES-NI runs in parallel with the encryption rounds; GCM's GHASH is a separate carry-less-multiply chain that runs serially after encryption. Give both hardware acceleration and AEGIS does its integrity work "for free" alongside the cipher, while GCM pays for GHASH on top.`;
+    benchmarkLog.textContent = `${lines.join('\n')}\n\n${summarizeComparison(results)}`;
   } catch (error) {
     benchmarkLog.textContent = `Benchmark failed: ${(error as Error).message}`;
   }

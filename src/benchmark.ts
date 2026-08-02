@@ -13,6 +13,26 @@ export interface BenchmarkResult {
   iterations: number;
 }
 
+export interface ComparisonResult {
+  aegis256: BenchmarkResult[];
+  aesGcm: BenchmarkResult[];
+  messageSizes: number[];
+}
+
+export function summarizeComparison(results: ComparisonResult): string {
+  let aegisWins = 0;
+  let gcmWins = 0;
+  let ties = 0;
+  for (let i = 0; i < results.messageSizes.length; i += 1) {
+    const a = results.aegis256[i]?.throughputMBps ?? 0;
+    const g = results.aesGcm[i]?.throughputMBps ?? 0;
+    if (a > g) aegisWins += 1;
+    else if (g > a) gcmWins += 1;
+    else ties += 1;
+  }
+  return `Measured winners on this run: AES-GCM ${gcmWins}/${results.messageSizes.length} sizes; AEGIS ${aegisWins}/${results.messageSizes.length}; ties ${ties}. Web Crypto's AES-GCM is native code here while this AEGIS is interpreted TypeScript, so this is an implementation race, not an equal-acceleration algorithm ranking. AEGIS is designed to overlap authentication with AES rounds; GCM uses a separate GHASH operation. The winner with native hardware acceleration is platform-specific and was not measured by this page.`;
+}
+
 function nowMs(): number {
   return performance.now();
 }
@@ -112,11 +132,7 @@ export async function benchmarkAesGcm(
 /**
  * Return side-by-side comparison for UI display.
  */
-export async function runComparison(): Promise<{
-  aegis256: BenchmarkResult[];
-  aesGcm: BenchmarkResult[];
-  messageSizes: number[];
-}> {
+export async function runComparison(): Promise<ComparisonResult> {
   const messageSizes = [1024, 16 * 1024, 256 * 1024, 1024 * 1024];
   const iterationMap = new Map<number, number>([
     [1024, 400],
