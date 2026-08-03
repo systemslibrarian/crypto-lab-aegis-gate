@@ -471,8 +471,10 @@ function setStatus(message: string): void {
 /**
  * Show a before/after hex view with the differing bytes marked, so a
  * learner sees exactly WHERE a tamper landed, not just that it happened.
+ * Returns the number of differing bytes so callers can narrate the same
+ * count the diff just rendered rather than a second, independent guess.
  */
-function renderHexDiff(el: HTMLElement, label: string, before: Uint8Array, after: Uint8Array): void {
+function renderHexDiff(el: HTMLElement, label: string, before: Uint8Array, after: Uint8Array): number {
   const spans = Array.from(after, (b, i) => {
     const hex = b.toString(16).padStart(2, '0');
     return i < before.length && before[i] !== b ? `<mark>${hex}</mark>` : hex;
@@ -483,6 +485,7 @@ function renderHexDiff(el: HTMLElement, label: string, before: Uint8Array, after
   );
   el.innerHTML = `<span class="hexdiff-label">${escapeHtml(label)} (${changed} byte${changed === 1 ? '' : 's'} differ):</span> <code>${spans}</code>`;
   el.hidden = false;
+  return changed;
 }
 
 function hideTamperViews(): void {
@@ -550,10 +553,20 @@ must<HTMLButtonElement>('#decrypt-btn').addEventListener('click', () => {
     );
 
     if (plaintext === null) {
-      renderHexDiff(tagCompare, 'Recomputed tag vs the tag presented', tag, computedTag);
-      whyAvalanche.hidden = false;
+      // Narrate the count the diff actually rendered. Tampering the CIPHERTEXT
+      // avalanches through the state and moves nearly every tag byte; tampering
+      // the TAG leaves the ciphertext intact, so the recomputed tag still equals
+      // the original and differs only in the byte that was flipped. Claiming the
+      // avalanche in both cases contradicted the diff shown right beside it.
+      const differing = renderHexDiff(tagCompare, 'Recomputed tag vs the tag presented', tag, computedTag);
+      const avalanched = differing > 1;
+      whyAvalanche.hidden = !avalanched;
       setStatus(
-        'TAMPER DETECTED: tag mismatch. Decryption rejected.\nNote how the recomputed tag differs in (almost) every byte - one flipped input bit avalanches through the whole state.',
+        `TAMPER DETECTED: tag mismatch. Decryption rejected.\n${
+          avalanched
+            ? `Note how the recomputed tag differs in ${differing} of ${computedTag.length} bytes - one flipped ciphertext bit avalanches through the whole state.`
+            : `The recomputed tag differs in ${differing} of ${computedTag.length} bytes - exactly what was altered. The ciphertext is untouched, so it still recomputes to the original tag, and any difference at all is rejected.`
+        }`,
       );
       return;
     }
@@ -845,8 +858,10 @@ function runNonceReuseDemo(reuseNonce: boolean): void {
     hint.textContent = `The highlighted run is genuinely recovered plaintext; the dim tail is garbage where AEGIS's state had diverged. The first ${GUARANTEED_LEAK_BLOCKS * 16} bytes leak for ANY two messages, more when they share a prefix.`;
     nrLog.textContent = `Same key + same nonce -> same starting state. C_A xor C_B = P_A xor P_B for ${leaked} leading bytes.\nSecret B, partially recovered without ever touching the key: see the highlighted run above.`;
   } else {
-    verdict.textContent =
-      'FRESH NONCES - independent keystreams, so nothing cancels (leaked run: 0 bytes). The same recovery attempt yields pure noise.';
+    // Report the run this click measured. Two independent keystreams still
+    // agree on a leading byte about 1 time in 256, so a hardcoded "0 bytes"
+    // was a claim the page had not checked.
+    verdict.textContent = `FRESH NONCES - independent keystreams, so nothing systematically cancels (leaked run: ${leaked} byte${leaked === 1 ? '' : 's'}, against ${GUARANTEED_LEAK_BLOCKS * 16} guaranteed under reuse). The same recovery attempt yields pure noise.`;
     verdict.className = 'nr-verdict ok';
     hint.textContent = 'Every byte of the "recovered" row is garbage. One rule - never reuse the pair - is the whole difference between the two buttons.';
     nrLog.textContent =

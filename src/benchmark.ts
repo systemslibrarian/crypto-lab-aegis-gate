@@ -41,15 +41,39 @@ function toCryptoBytes(bytes: Uint8Array): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
+/** Longest the benchmark waits for an idle slot before resuming anyway. */
+const IDLE_YIELD_TIMEOUT_MS = 50;
+
+/**
+ * Yield to the event loop between batches so the UI stays responsive.
+ *
+ * A bare `requestIdleCallback` is not enough. Chrome services the idle queue
+ * only when it has a reason to schedule one (a frame, a timer). A page whose
+ * only pending work is this benchmark — a backgrounded tab, or any headless
+ * run — can go without an idle period indefinitely and the callback never
+ * fires, leaving the exhibit stuck on "Benchmarking..." with no result ever
+ * shown. So ask for an idle slot but race it against a plain timer and take
+ * whichever arrives first.
+ */
 function requestIdleYield(): Promise<void> {
-  if ('requestIdleCallback' in globalThis) {
-    return new Promise((resolve) => {
-      (globalThis as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(
-        () => resolve(),
-      );
-    });
-  }
-  return new Promise((resolve) => setTimeout(resolve, 0));
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (): void => {
+      if (!settled) {
+        settled = true;
+        resolve();
+      }
+    };
+    const idle = (
+      globalThis as unknown as {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+      }
+    ).requestIdleCallback;
+    if (typeof idle === 'function') {
+      idle.call(globalThis, finish, { timeout: IDLE_YIELD_TIMEOUT_MS });
+    }
+    setTimeout(finish, IDLE_YIELD_TIMEOUT_MS);
+  });
 }
 
 /**
