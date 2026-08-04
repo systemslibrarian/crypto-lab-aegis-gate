@@ -771,6 +771,23 @@ ul a,
   }
 }
 
+/* The no-preference guard above covers the dataflow pulse, but it was the only
+   motion this lab suppressed. The spec-pane highlight (border-color/box-shadow),
+   the skip link's slide-in and the site header's button transitions all kept
+   running for someone who had asked the OS for less motion. Honour the request
+   across the board rather than for one SVG. !important is needed because the
+   shared header's rules live in an inline <style> later in the document and
+   would otherwise win the cascade at equal specificity. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Byte-level state diff */
 .byte {
   display: inline;

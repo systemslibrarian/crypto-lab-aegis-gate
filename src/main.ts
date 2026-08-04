@@ -414,8 +414,12 @@ function renderState(state: AegisState | null): void {
     .map((block, i) => {
       const previous = lastRenderedState ? lastRenderedState[i] : null;
       const changed = previous ? block.reduce((n, b, j) => n + (previous[j] !== b ? 1 : 0), 0) : 0;
+      // ARIA prohibits aria-label on a generic-role element such as a bare
+      // <span>, so the label was both invalid and unreliably announced. Show
+      // the compact form to sighted readers and give assistive tech the full
+      // sentence through a visually-hidden sibling instead.
       const badge = previous
-        ? `<span class="chg" aria-label="${changed} of 16 bytes changed">${changed}/16 changed</span>`
+        ? `<span class="chg"><span aria-hidden="true">${changed}/16 changed</span><span class="visually-hidden">${changed} of 16 bytes changed</span></span>`
         : '';
       return `
       <article class="state-card ${positions[i]}">
