@@ -494,3 +494,45 @@ test('a shared link restores the exact scenario', async ({ page }) => {
   expect(key).toMatch(/^[0-9a-f]{64}$/);
   expect(key).not.toBe('nothex');
 });
+
+/* ── The hidden attribute must actually hide ──────────────────────────────
+ * `[hidden] { display: none }` is a UA rule using an attribute selector, so any
+ * class rule setting `display` outranks it. `.nr-output { display: grid }` did:
+ * Exhibit 3's output panel painted from first paint at 1086x264, every value
+ * slot empty, including the row labelled "B recovered from C_A, C_B, and known
+ * A" — the answer to the Predict prompt immediately above it.
+ *
+ * This asserts the property for EVERY element carrying `hidden`, not for the
+ * one that happened to be broken, so a future `display` on any hideable class
+ * fails here rather than shipping.
+ */
+test('nothing marked hidden is painted, at first paint or after a reveal', async ({ page }) => {
+  await page.goto('.');
+
+  const painted = async (): Promise<Array<{ id: string; display: string; size: string }>> =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('[hidden]')]
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return {
+            id: el.id || el.className.toString(),
+            display: getComputedStyle(el).display,
+            size: `${Math.round(r.width)}x${Math.round(r.height)}`,
+          };
+        })
+        .filter((x) => x.display !== 'none'),
+    );
+
+  // There must be something to check, or this test would pass vacuously.
+  const total = await page.locator('[hidden]').count();
+  expect(total, 'no [hidden] elements — this test would prove nothing').toBeGreaterThan(0);
+  expect(await painted(), 'hidden elements painted at first paint').toEqual([]);
+
+  // Reveal Exhibit 3, then hide it again: the attribute must still govern.
+  await page.locator('#nr-reuse-btn').click();
+  await expect(page.locator('#nr-output')).toBeVisible();
+  await page.evaluate(() => {
+    (document.querySelector('#nr-output') as HTMLElement).hidden = true;
+  });
+  expect(await painted(), 'setting hidden = true did not hide').toEqual([]);
+});

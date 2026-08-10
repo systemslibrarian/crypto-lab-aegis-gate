@@ -39,6 +39,19 @@ html {
   box-sizing: border-box;
 }
 
+/* The `hidden` attribute must actually hide.
+   The UA rule is `[hidden] { display: none }` — an attribute selector, which any
+   class rule setting `display` outranks. `.nr-output { display: grid }` did, so
+   Exhibit 3's output panel painted from first paint (1086x264) with every value
+   slot empty, including the row labelled "B recovered from C_A, C_B, and known
+   A". That panel is the answer to the Predict prompt directly above it, so the
+   exhibit revealed its own punchline before the visitor pressed anything.
+   `!important` is load-bearing here: without it any future `display` on a class
+   silently wins again. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   color: var(--text);
