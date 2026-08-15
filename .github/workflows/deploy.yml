@@ -30,6 +30,14 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The vitest core suite: AES and AEGIS conformance against the spec
+      # vectors, avalanche, birthday and nonce-reuse behaviour, byte helpers,
+      # share encoding and app boot. Deploy previously ran only test:a11y, so
+      # none of this gated a publish — a build with broken AEGIS could ship so
+      # long as the broken page was accessible.
+      - name: Unit and conformance tests
+        run: npm test
+
       - name: Build
         run: npm run build
 
