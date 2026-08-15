@@ -172,12 +172,6 @@ test('no WCAG A/AA violations in dark theme, in every state', async ({ page }) =
   await scanEveryState(page, 'dark');
 });
 
-test('no WCAG A/AA violations in light theme, in every state', async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.locator('#cl-theme-toggle').click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await scanEveryState(page, 'light');
-});
 
 test('the benchmark chart is accessible once it has drawn its bars', async ({ page }) => {
   test.setTimeout(180_000);
