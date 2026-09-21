@@ -8,7 +8,7 @@ import { concatBytes, hexToBytes, padBlock } from './bytes';
 export type AegisState = [AESBlock, AESBlock, AESBlock, AESBlock, AESBlock, AESBlock];
 
 /**
- * Constants from draft-irtf-cfrg-aegis-aead-18 Section 2 (first bytes of the
+ * Constants from RFC 10032 Section 2 (first bytes of the
  * Fibonacci sequence mod 256).
  */
 export const C0: AESBlock = hexToBytes('000101020305080d1522375990e97962');
@@ -34,7 +34,7 @@ function andBlocks(a: AESBlock, b: AESBlock): AESBlock {
 
 /**
  * The keystream block z = S1 ^ S4 ^ S5 ^ (S2 & S3), per
- * draft-irtf-cfrg-aegis-aead-18 Section 4.6. Exported so the state-machine
+ * RFC 10032 Section 4.6. Exported so the state-machine
  * exhibit can show where ciphertext bytes actually come from.
  */
 export function keystream(S: AegisState): AESBlock {
@@ -43,7 +43,7 @@ export function keystream(S: AegisState): AESBlock {
 
 /**
  * The AEGIS update function - the permutation.
- * draft-irtf-cfrg-aegis-aead-18 Section 4.3.
+ * RFC 10032 Section 4.3.
  */
 export function update(S: AegisState, M: AESBlock): AegisState {
   const nextS0 = aesRound(S[5], xorBlocks(S[0], M));
@@ -58,7 +58,7 @@ export function update(S: AegisState, M: AESBlock): AegisState {
 
 /**
  * Length in bytes of an AEGIS-256 authentication tag.
- * The draft permits a 128-bit (16-byte) or 256-bit (32-byte) tag.
+ * RFC 10032 permits a 128-bit (16-byte) or 256-bit (32-byte) tag.
  */
 export type TagLength = 16 | 32;
 
@@ -68,7 +68,7 @@ export type TagLength = 16 | 32;
  * Seeds the six state blocks from K0/K1, N0/N1, and the constants C0/C1,
  * then runs the update function 16 times (4 passes over the 4-block
  * injection schedule K0, K1, K0^N0, K1^N1) to diffuse them, per
- * draft-irtf-cfrg-aegis-aead-18 Section 4.4.
+ * RFC 10032 Section 4.4.
  */
 export function initialize(key: Uint8Array, nonce: Uint8Array): AegisState {
   ensureLength(key, 32, 'key');
@@ -140,7 +140,7 @@ export function initializeSteps(key: Uint8Array, nonce: Uint8Array): AegisState[
 
 /**
  * Absorb an associated data block (no ciphertext output).
- * draft-irtf-cfrg-aegis-aead-18 Section 4.5.
+ * RFC 10032 Section 4.5.
  */
 export function absorb(S: AegisState, ad: AESBlock): AegisState {
   return update(S, ad);
@@ -192,7 +192,7 @@ function writeLE64(out: Uint8Array, offset: number, value: bigint): void {
  * Absorbs the associated-data and message bit lengths (XORed into S3),
  * runs 7 closing updates, then folds the state into a tag. A 128-bit tag
  * is the XOR of all six blocks; a 256-bit tag concatenates (S0^S1^S2) with
- * (S3^S4^S5), per draft-irtf-cfrg-aegis-aead-18 Section 4.9.
+ * (S3^S4^S5), per RFC 10032 Section 4.9.
  */
 export function finalize(
   S: AegisState,

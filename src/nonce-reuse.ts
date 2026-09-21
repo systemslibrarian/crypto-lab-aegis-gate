@@ -21,7 +21,7 @@ import { xorBytes } from './bytes';
  * diverge, the plaintext they absorbed pushes the two states apart and the
  * keystreams stop matching. A leaked 32-byte prefix is already a
  * catastrophic break; nonce reuse also voids AEGIS's authentication
- * guarantees (see the draft's security considerations).
+ * guarantees (see RFC 10032's security considerations).
  */
 
 /** Number of leading blocks whose keystream is guaranteed to cancel. */

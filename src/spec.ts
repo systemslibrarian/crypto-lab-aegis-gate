@@ -1,22 +1,21 @@
 /**
- * AEGIS-256 pseudocode from draft-irtf-cfrg-aegis-aead-18 (lightly
- * compacted for a narrow pane; logic unchanged), with deep links into the
- * draft. The state-machine exhibit renders these beside the live state and
- * highlights whichever function just executed, so a learner watches the
- * spec text and the bytes move together.
+ * AEGIS-256 pseudocode from RFC 10032 (lightly compacted for a narrow pane;
+ * logic unchanged), with deep links into the RFC. The state-machine exhibit
+ * renders these beside the live state and highlights whichever function just
+ * executed, so a learner watches the spec text and the bytes move together.
  */
 
-export const DRAFT_URL = 'https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-aegis-aead-18';
+export const RFC_URL = 'https://www.rfc-editor.org/rfc/rfc10032.html';
 
 export type SpecId = 'update' | 'init' | 'absorb' | 'enc' | 'finalize';
 
 export interface SpecSection {
   id: SpecId;
-  /** Section number within draft-18. */
+  /** Section number within RFC 10032. */
   section: string;
   title: string;
   url: string;
-  /** Verbatim pseudocode from the draft. */
+  /** Verbatim pseudocode from RFC 10032. */
   code: string;
 }
 
@@ -25,7 +24,7 @@ export const SPEC_SECTIONS: readonly SpecSection[] = [
     id: 'update',
     section: '4.3',
     title: 'The Update Function',
-    url: `${DRAFT_URL}#section-4.3`,
+    url: `${RFC_URL}#section-4.3`,
     code: `Update(M)
   S'0 = AESRound(S5, S0 ^ M)
   S'1 = AESRound(S0, S1)
@@ -40,7 +39,7 @@ export const SPEC_SECTIONS: readonly SpecSection[] = [
     id: 'init',
     section: '4.4',
     title: 'The Init Function',
-    url: `${DRAFT_URL}#section-4.4`,
+    url: `${RFC_URL}#section-4.4`,
     code: `Init(key, nonce)
   k0, k1 = Split(key, 128)
   n0, n1 = Split(nonce, 128)
@@ -62,7 +61,7 @@ export const SPEC_SECTIONS: readonly SpecSection[] = [
     id: 'absorb',
     section: '4.5',
     title: 'The Absorb Function',
-    url: `${DRAFT_URL}#section-4.5`,
+    url: `${RFC_URL}#section-4.5`,
     code: `Absorb(ai)
   Update(ai)`,
   },
@@ -70,7 +69,7 @@ export const SPEC_SECTIONS: readonly SpecSection[] = [
     id: 'enc',
     section: '4.6',
     title: 'The Enc Function',
-    url: `${DRAFT_URL}#section-4.6`,
+    url: `${RFC_URL}#section-4.6`,
     code: `Enc(xi)
   z = S1 ^ S4 ^ S5 ^ (S2 & S3)
   Update(xi)
@@ -81,7 +80,7 @@ export const SPEC_SECTIONS: readonly SpecSection[] = [
     id: 'finalize',
     section: '4.9',
     title: 'The Finalize Function',
-    url: `${DRAFT_URL}#section-4.9`,
+    url: `${RFC_URL}#section-4.9`,
     code: `Finalize(ad_len_bits, msg_len_bits)
   t = S3 ^ (LE64(ad_len_bits) ||
             LE64(msg_len_bits))
