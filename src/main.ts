@@ -18,7 +18,7 @@ import { nonceCollisionProbability } from './birthday';
 import { runConformance } from './conformance';
 import { GUARANTEED_LEAK_BLOCKS, formatPrintable, leakedRunLength, recoverSibling } from './nonce-reuse';
 import { buildShareQuery, parseShareQuery } from './share';
-import { DRAFT_URL, SPEC_SECTIONS, type SpecId } from './spec';
+import { RFC_URL, SPEC_SECTIONS, type SpecId } from './spec';
 import {
   bytesToHex,
   bytesToUtf8,
@@ -132,8 +132,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <header class="cl-hero">
       <div class="cl-hero-main">
         <h1 class="cl-hero-title">AEGIS-256</h1>
-        <p class="cl-hero-sub">AEAD &middot; AES-round sponge &middot; CFRG draft</p>
-        <p class="cl-hero-desc">Encrypt, decrypt, and tamper with a message through a 768-bit six-block AEGIS-256 state, verified live against the official CFRG draft vectors.</p>
+        <p class="cl-hero-sub">AEAD &middot; AES-round sponge &middot; RFC 10032</p>
+        <p class="cl-hero-desc">Encrypt, decrypt, and tamper with a message through a 768-bit six-block AEGIS-256 state, verified live against the official RFC 10032 vectors.</p>
       </div>
       <aside class="cl-hero-why" aria-label="Why it matters">
         <span class="cl-hero-why-label">WHY IT MATTERS</span>
@@ -144,13 +144,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="warning">Nonce reuse is catastrophic. Never encrypt two messages with the same key+nonce pair &mdash; Exhibit 3 shows you exactly why.</div>
       <div id="conformance" class="conformance" role="status" aria-live="polite">
         <span class="conformance-badge" data-state="pending">checking&hellip;</span>
-        <span class="conformance-text">Replaying official draft vectors in your browser&hellip;</span>
+        <span class="conformance-text">Replaying official RFC 10032 vectors in your browser&hellip;</span>
         <button id="conformance-details-btn" type="button" class="link-btn" aria-expanded="false" aria-controls="conformance-details" hidden>Show details</button>
       </div>
       <div id="conformance-details" class="table-wrap" role="region" aria-label="Per-vector conformance results" tabindex="0" hidden>
         <table class="conformance-table">
-          <caption class="visually-hidden">Per-vector conformance results: ciphertext, 128-bit tag, 256-bit tag, and decrypt round-trip for each official draft test vector</caption>
-          <thead><tr><th scope="col">Draft vector</th><th scope="col">Ciphertext</th><th scope="col">128-bit tag</th><th scope="col">256-bit tag</th><th scope="col">Round-trip</th></tr></thead>
+          <caption class="visually-hidden">Per-vector conformance results: ciphertext, 128-bit tag, 256-bit tag, and decrypt round-trip for each official RFC 10032 test vector</caption>
+          <thead><tr><th scope="col">RFC 10032 vector</th><th scope="col">Ciphertext</th><th scope="col">128-bit tag</th><th scope="col">256-bit tag</th><th scope="col">Round-trip</th></tr></thead>
           <tbody id="conformance-encrypt-body"></tbody>
         </table>
         <table class="conformance-table">
@@ -214,7 +214,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
     <section class="panel" id="exhibit-2">
       <h2>Exhibit 2: The AEGIS State Machine</h2>
-      <p class="note">Watch the spec execute: every button below runs this implementation's real functions on the key/nonce/AD/plaintext from Exhibit 1, the diagram shows where the bytes flow, and the pseudocode pane highlights the part of <a href="${DRAFT_URL}" target="_blank" rel="noopener">draft-18</a> that just ran. Bytes that changed since the previous step glow gold.</p>
+      <p class="note">Watch the spec execute: every button below runs this implementation's real functions on the key/nonce/AD/plaintext from Exhibit 1, the diagram shows where the bytes flow, and the pseudocode pane highlights the part of <a href="${RFC_URL}" target="_blank" rel="noopener">RFC 10032</a> that just ran. Bytes that changed since the previous step glow gold.</p>
       <div class="sm-layout">
         <div class="sm-left">
           <div class="actions">
@@ -232,7 +232,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           </div>
           <pre id="state-log" class="status" role="status" aria-live="polite">State machine idle.</pre>
         </div>
-        <aside class="spec-pane" aria-label="AEGIS-256 pseudocode from draft-irtf-cfrg-aegis-aead-18">
+        <aside class="spec-pane" aria-label="AEGIS-256 pseudocode from RFC 10032">
           <h3>The spec, live</h3>
           ${specPaneHtml}
         </aside>
@@ -334,8 +334,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
     <section class="panel" id="exhibit-6">
       <h2>Exhibit 6: Why This Matters</h2>
-      <p>AEGIS has implementations across the ecosystem &mdash; including libsodium and the Zig standard library &mdash; and is of active interest for high-throughput systems where AES hardware acceleration is available. AEGIS is still a CFRG informational draft rather than a finalized standard, and a <a href="https://datatracker.ietf.org/doc/draft-denis-tls-aegis/" target="_blank" rel="noopener">companion draft</a> proposes AEGIS cipher suites for TLS 1.3, DTLS 1.3, and QUIC.</p>
-      <h3>The AEGIS family (<a href="${DRAFT_URL}#section-5" target="_blank" rel="noopener">draft-18 &sect;3&ndash;5</a>)</h3>
+      <p>AEGIS has implementations across the ecosystem &mdash; including libsodium and the Zig standard library &mdash; and is of active interest for high-throughput systems where AES hardware acceleration is available. AEGIS is specified in <a href="${RFC_URL}" target="_blank" rel="noopener">RFC 10032</a>, an informational RFC. A <a href="https://datatracker.ietf.org/doc/draft-denis-tls-aegis/" target="_blank" rel="noopener">companion draft</a> proposes AEGIS cipher suites for TLS 1.3, DTLS 1.3, and QUIC.</p>
+      <h3>The AEGIS family (<a href="${RFC_URL}#section-5" target="_blank" rel="noopener">RFC 10032 &sect;3&ndash;5</a>)</h3>
       <div class="table-wrap" role="region" aria-label="AEGIS family comparison table" tabindex="0">
         <table>
           <thead><tr><th>Variant</th><th>Key</th><th>Nonce</th><th>State</th><th>Rate per update</th><th>Design target</th></tr></thead>
@@ -806,7 +806,7 @@ must<HTMLButtonElement>('#avalanche-btn').addEventListener('click', () => {
     must<HTMLDivElement>('#avalanche-result').hidden = false;
 
     const half = trace.findIndex((s) => s.totalBits >= STATE_BITS * 0.45);
-    avalancheLog.textContent = `Flipped bit ${bitIndex} of nonce byte ${byteIndex}: the seeded states differ by exactly ${trace[0].totalBits} bit.\nBy ${half > 0 ? `update ${half}` : 'the end of init'} the two states already differ in ~50% of their ${STATE_BITS} bits - full diffusion.\nThat is what the draft's 16 setup updates are for: no keystream is exposed before the nonce has avalanched everywhere.`;
+    avalancheLog.textContent = `Flipped bit ${bitIndex} of nonce byte ${byteIndex}: the seeded states differ by exactly ${trace[0].totalBits} bit.\nBy ${half > 0 ? `update ${half}` : 'the end of init'} the two states already differ in ~50% of their ${STATE_BITS} bits - full diffusion.\nThat is what RFC 10032's 16 setup updates are for: no keystream is exposed before the nonce has avalanched everywhere.`;
   } catch (error) {
     avalancheLog.textContent = `Avalanche error: ${(error as Error).message}`;
   }
@@ -983,8 +983,8 @@ function renderConformance(): void {
   badge.dataset.state = report.allPass ? 'pass' : 'fail';
   badge.textContent = report.allPass ? 'PASS' : 'FAIL';
   text.textContent = report.allPass
-    ? `${report.passed}/${report.total} official draft vectors conform - ${report.rows.length} encryptions reproduced byte-for-byte (with decrypt round-trip), ${report.rejections.length} forgeries rejected.`
-    : `${report.passed}/${report.total} draft vectors conform. Something is off - see details.`;
+    ? `${report.passed}/${report.total} official RFC 10032 vectors conform - ${report.rows.length} encryptions reproduced byte-for-byte (with decrypt round-trip), ${report.rejections.length} forgeries rejected.`
+    : `${report.passed}/${report.total} RFC 10032 vectors conform. Something is off - see details.`;
   detailsBtn.hidden = false;
 
   detailsBtn.addEventListener('click', () => {

@@ -56,11 +56,11 @@ describe('app boot', () => {
     expect(document.querySelectorAll('#conformance-reject-body tr').length).toBe(4);
   });
 
-  it('renders the draft pseudocode pane with deep links into draft-18', () => {
+  it('renders the RFC 10032 pseudocode pane with deep links into the RFC', () => {
     const blocks = document.querySelectorAll('.spec-block');
     expect(blocks.length).toBe(5);
     const link = document.querySelector<HTMLAnchorElement>('.spec-block h4 a');
-    expect(link?.href).toContain('draft-irtf-cfrg-aegis-aead-18');
+    expect(link?.href).toContain('rfc10032.html');
   });
 
   it('encrypts and then decrypts back to the original plaintext through the UI', () => {
