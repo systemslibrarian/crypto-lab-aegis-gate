@@ -6,7 +6,7 @@ import { type AegisState, initializeSteps } from './aegis';
  * bits of the 768-bit state differ between the two runs.
  *
  * Ideal diffusion is ~50% of bits differing (~384/768) — this is what the
- * draft's 16 setup updates exist to reach before any keystream is exposed.
+ * RFC 10032's 16 setup updates exist to reach before any keystream is exposed.
  */
 
 export const STATE_BITS = 768;

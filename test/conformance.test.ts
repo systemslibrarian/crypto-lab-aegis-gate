@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { runConformance } from '../src/conformance';
-import { DRAFT_VECTORS, REJECTION_VECTORS } from '../src/draft-vectors';
+import { RFC_VECTORS, REJECTION_VECTORS } from '../src/rfc10032-vectors';
 
 interface JsonVector {
   name: string;
@@ -23,11 +23,11 @@ const jsonPath = resolve(thisDir, 'vectors/aegis-256-test-vectors.json');
 const jsonVectors = JSON.parse(readFileSync(jsonPath, 'utf8')) as JsonVector[];
 
 describe('in-browser conformance harness', () => {
-  it('reports all draft vectors passing, including decrypt round-trips and forgery rejection', () => {
+  it('reports all RFC 10032 vectors passing, including decrypt round-trips and forgery rejection', () => {
     const report = runConformance();
     expect(report.allPass).toBe(true);
     expect(report.passed).toBe(report.total);
-    expect(report.total).toBe(DRAFT_VECTORS.length + REJECTION_VECTORS.length);
+    expect(report.total).toBe(RFC_VECTORS.length + REJECTION_VECTORS.length);
     for (const row of report.rows) {
       expect(row.roundTripOk, `${row.name} round-trip`).toBe(true);
     }
@@ -37,9 +37,9 @@ describe('in-browser conformance harness', () => {
     }
   });
 
-  it('keeps src/draft-vectors.ts byte-identical to the JSON fixture (no drift)', () => {
+  it('keeps src/rfc10032-vectors.ts byte-identical to the JSON fixture (no drift)', () => {
     // Every shipped vector must match the authoritative test fixture exactly.
-    for (const v of DRAFT_VECTORS) {
+    for (const v of RFC_VECTORS) {
       const source = jsonVectors.find((j) => j.name === v.name);
       expect(source, `JSON fixture is missing ${v.name}`).toBeTruthy();
       expect({
@@ -67,7 +67,7 @@ describe('in-browser conformance harness', () => {
       .filter((j) => typeof j.msg === 'string' && !j.error)
       .map((j) => j.name)
       .sort();
-    const shippedNames = DRAFT_VECTORS.map((v) => v.name).sort();
+    const shippedNames = RFC_VECTORS.map((v) => v.name).sort();
     expect(shippedNames).toEqual(shippableNames);
   });
 

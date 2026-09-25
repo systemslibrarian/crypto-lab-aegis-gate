@@ -1,13 +1,14 @@
 /**
- * Official AEGIS-256 test vectors from draft-irtf-cfrg-aegis-aead-18,
- * Appendix A.2. These are public, non-secret values whose only purpose is
- * conformance testing — the demo replays them in the browser so a visitor
- * can watch this implementation reproduce the draft's bytes exactly.
+ * Official AEGIS-256 test vectors from RFC 10032,
+ * Appendix A.3. These are public, non-secret values whose only purpose is
+ * conformance testing — the demo replays encryption vectors 1-5 in the browser
+ * so a visitor can watch this implementation reproduce the RFC's bytes exactly.
  *
  * Kept in sync with test/vectors/aegis-256-test-vectors.json by
- * test/draft-vectors.test.ts.
+ * test/conformance.test.ts. Compared against RFC 10032 Appendix A.3 on
+ * September 25, 2026 (all nine vectors, including rejection cases).
  */
-export interface DraftVector {
+export interface RfcVector {
   name: string;
   /** 32-byte key, hex. */
   key: string;
@@ -25,7 +26,7 @@ export interface DraftVector {
   tag256: string;
 }
 
-export const DRAFT_VECTORS: readonly DraftVector[] = [
+export const RFC_VECTORS: readonly RfcVector[] = [
   {
     name: 'Test Vector 1',
     key: '1001000000000000000000000000000000000000000000000000000000000000',
@@ -79,8 +80,8 @@ export const DRAFT_VECTORS: readonly DraftVector[] = [
 ] as const;
 
 /**
- * Official must-reject vectors from draft-irtf-cfrg-aegis-aead-18,
- * Appendix A.2 (Test Vectors 6-9): a swapped key/nonce, a flipped
+ * Official must-reject vectors from RFC 10032,
+ * Appendix A.3 (Test Vectors 6-9): a swapped key/nonce, a flipped
  * ciphertext bit, altered AD, and a flipped tag bit. A conformant
  * implementation must refuse to decrypt every one of them.
  *

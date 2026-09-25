@@ -57,7 +57,7 @@ async function loadScenario(page: Page): Promise<void> {
   await page.locator('#pt-input').fill(PLAINTEXT);
 }
 
-// --- The headline verdict: live conformance against the draft vectors -----
+// --- The headline verdict: live conformance against the RFC 10032 vectors -----
 
 test('conformance badge passes and its counters are internally consistent', async ({ page }) => {
   await page.goto('.');
@@ -68,8 +68,8 @@ test('conformance badge passes and its counters are internally consistent', asyn
   await expect(page.locator('#conformance')).toHaveAttribute('data-state', 'pass');
 
   const summary = (await page.locator('.conformance-text').textContent()) ?? '';
-  // "P/T official draft vectors conform - E encryptions ..., F forgeries rejected."
-  const counts = /(\d+)\/(\d+) official draft vectors conform - (\d+) encryptions [^,]+, (\d+) forgeries rejected/.exec(
+  // "P/T RFC 10032 vectors conform - E encryptions ..., F forgeries rejected."
+  const counts = /(\d+)\/(\d+) RFC 10032 vectors conform - (\d+) encryptions [^,]+, (\d+) forgeries rejected/.exec(
     summary,
   );
   expect(counts, `unparseable conformance summary: ${summary}`).not.toBeNull();
@@ -246,7 +246,7 @@ test('avalanche trace starts at one bit and reaches ~half the state', async ({ p
   await expect(page.locator('#avalanche-result')).toBeVisible();
 
   const rows = page.locator('#avalanche-table tbody tr');
-  // Seed state plus the draft's 16 initialization updates.
+  // Seed state plus the RFC's 16 initialization updates.
   await expect(rows).toHaveCount(17);
 
   const totals: number[] = [];

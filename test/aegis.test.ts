@@ -80,9 +80,9 @@ describe('AEGIS-256 update function', () => {
   });
 });
 
-describe('AEGIS-256 encryption vectors (draft-irtf-cfrg-aegis-aead-18)', () => {
+describe('AEGIS-256 encryption vectors (RFC 10032)', () => {
   it('exercises the full official vector set', () => {
-    // Guard against silently testing fewer vectors than the draft publishes.
+    // Guard against silently testing fewer vectors than the RFC publishes.
     expect(encryptVectors.length).toBeGreaterThanOrEqual(5);
     expect(failureVectors.length).toBeGreaterThanOrEqual(4);
   });
@@ -115,7 +115,7 @@ describe('AEGIS-256 encryption vectors (draft-irtf-cfrg-aegis-aead-18)', () => {
   }
 });
 
-describe('AEGIS-256 authentication failures (draft vectors 6-9)', () => {
+describe('AEGIS-256 authentication failures (RFC 10032 vectors 6-9)', () => {
   for (const v of failureVectors) {
     const key = requireHex(v.key, 'key', v.name);
     const nonce = requireHex(v.nonce, 'nonce', v.name);

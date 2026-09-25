@@ -2,17 +2,18 @@
 
 ## What It Is
 Browser-based AEGIS-256 authenticated encryption demo implementing
-draft-irtf-cfrg-aegis-aead-18 (CFRG, October 2025). AEGIS-256 is an
+[RFC 10032](https://www.rfc-editor.org/rfc/rfc10032) (CFRG, September 2026),
+an IRTF Informational RFC rather than an Internet Standard. AEGIS-256 is an
 AES-based AEAD designed for high-performance applications, using the AES
 round function directly to build a sponge-like construction with 768-bit
 state and 256-bit nonces. All 6-state updates, AES round function, and
-the authentication tag derivation are implemented from the draft spec
-and verified against the official JSON test vectors. Both the 128-bit and
+the authentication tag derivation are implemented from the RFC
+and verified against its Appendix A.3 test vectors. Both the 128-bit and
 256-bit tag variants are supported. No external crypto libraries are used;
 the AES S-box, ShiftRows, MixColumns, and GF(2^8) multiplication are
 implemented from FIPS 197.
 
-The page opens by replaying every official draft test vector through this
+The page opens by replaying all nine encryption and rejection vectors in RFC 10032 Appendix A.3 through this
 implementation's own encrypt path, in your browser, and showing the result
 byte-for-byte — both the five encryption vectors (ciphertext, 128-bit tag,
 256-bit tag, and a decrypt round-trip) and the four must-reject forgery
@@ -37,7 +38,7 @@ Six interactive exhibits go beyond a byte dump:
 - **The state machine, live (Exhibit 2)** — step Init / Absorb / Enc / Finalize
   on the real implementation, with an animated dataflow diagram, byte-level
   diff highlighting between steps, the extracted keystream `Z`, and the
-  verbatim draft-18 pseudocode alongside, highlighting whichever function ran.
+  compacted RFC 10032 pseudocode alongside, highlighting whichever function ran.
   A collapsible **"open the black box"** sub-panel runs one real AES round on the
   live S0 block stage by stage — SubBytes (S-box), ShiftRows, MixColumns, and the
   round-key XOR — so "AES-based" becomes a mechanism you watch, not an assertion.
@@ -65,19 +66,19 @@ Six interactive exhibits go beyond a byte dump:
 
 **[systemslibrarian.github.io/crypto-lab-aegis-gate](https://systemslibrarian.github.io/crypto-lab-aegis-gate/)**
 
-The page replays every official draft test vector through its own encrypt path in your browser, showing each result byte-for-byte, lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants, steps the AEGIS state machine beside the draft pseudocode, and demonstrates the nonce-reuse catastrophe as a live known-plaintext recovery.
+The page replays the nine RFC 10032 Appendix A.3 encryption and rejection vectors in your browser, showing each result byte-for-byte, lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants, steps the AEGIS state machine beside the RFC pseudocode, and demonstrates the nonce-reuse catastrophe as a live known-plaintext recovery. The separate Update test vector is checked in the unit suite.
 
 ## What Can Go Wrong
-- AEGIS is a CFRG Informational draft, not a finalized RFC standard
+- RFC 10032 is a finalized IRTF Informational RFC, not an Internet Standard or a TLS cipher suite
 - Nonce reuse is catastrophic: same key+nonce across messages leaks plaintext relationships and breaks security
 - This implementation is pure TypeScript for education, not native-speed production crypto
-- Key commitment details differ by variant; review draft security considerations for protocol-level assumptions
+- Key commitment details differ by variant; review RFC 10032's security considerations for protocol-level assumptions
 
 ## Real-World Usage
-- Designed by Hongjun Wu and Bart Preneel as a CAESAR competition finalist and specified in draft-irtf-cfrg-aegis-aead through October 2025
+- Designed by Hongjun Wu and Bart Preneel as a CAESAR competition finalist and described in RFC 10032 (September 2026)
 - Implemented across the ecosystem, including libsodium and the Zig standard library
 - Of active interest for high-throughput protocols and networking environments where AES hardware acceleration is available
-- Because it is still a CFRG Informational draft rather than a finalized RFC, treat specific compliance or regulatory claims seen elsewhere as needing independent verification
+- RFC publication records CFRG consensus but is not an IETF standards-track approval or regulatory certification; verify such claims independently
 
 ## How to Run Locally
 

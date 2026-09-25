@@ -2,22 +2,22 @@ import { aegis256Decrypt, aegis256Encrypt } from './aegis';
 import {
   type ConformanceReport,
   type ConformanceRow,
-  DRAFT_VECTORS,
+  RFC_VECTORS,
   REJECTION_VECTORS,
   type RejectionRow,
-} from './draft-vectors';
+} from './rfc10032-vectors';
 import { bytesToHex, hexToBytes } from './bytes';
 
 /**
- * Replay every official draft vector through this implementation in the
+ * Replay every official RFC 10032 vector through this implementation in the
  * visitor's browser and report, byte for byte, whether it conforms — so the
  * "verified against official vectors" claim is something they can watch,
  * not just take on faith. Three checks per encryption vector (ciphertext,
  * both tag lengths) plus a decrypt round-trip, and every must-reject
- * forgery vector (draft vectors 6-9) must be refused.
+ * forgery vector (RFC 10032 vectors 6-9) must be refused.
  */
 export function runConformance(): ConformanceReport {
-  const rows: ConformanceRow[] = DRAFT_VECTORS.map((v) => {
+  const rows: ConformanceRow[] = RFC_VECTORS.map((v) => {
     const key = hexToBytes(v.key);
     const nonce = hexToBytes(v.nonce);
     const ad = hexToBytes(v.ad);
