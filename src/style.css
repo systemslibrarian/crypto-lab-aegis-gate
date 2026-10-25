@@ -299,6 +299,20 @@ textarea:focus-visible,
   align-items: center;
 }
 
+#exhibit-7 .grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+#kc-output { min-width: 0; }
+#kc-bytes { overflow-wrap: anywhere; }
+#kc-status.danger { background-color: #3d1220; color: #ffd5df; border-color: #ff6b8d; }
+#kc-status.ok { background-color: #072d27; color: #b7ffe0; border-color: #42ba96; }
+#exhibit-7 select:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+@media (max-width: 640px) {
+  #exhibit-7 .grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
 .state-card {
   border-radius: 12px;
   border: 1px solid rgba(0, 212, 255, 0.4);
