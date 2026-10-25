@@ -1,4 +1,5 @@
 import './style.css';
+import { commitmentHtml, mountCommitment } from './commitment-ui';
 
 import {
   type AegisState,
@@ -355,6 +356,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <li>See also: <a href="https://systemslibrarian.github.io/crypto-lab-padding-oracle/">crypto-lab-padding-oracle</a></li>
       </ul>
     </section>
+    ${commitmentHtml}
   </main>
 <footer style="margin-top:3rem;padding:2rem 1rem;border-top:1px solid rgba(128,128,128,.25);text-align:center;font-size:.85rem;line-height:1.9;font-family:ui-monospace,Menlo,Consolas,monospace">
   <div><strong>Related demos:</strong> <a href="https://systemslibrarian.github.io/crypto-lab-aes-modes/" style="color:#35d6bb">aes-modes</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-ascon/" style="color:#35d6bb">ascon</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-chacha20-stream/" style="color:#35d6bb">chacha20-stream</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-shadow-vault/" style="color:#35d6bb">shadow-vault</a> &middot; <a href="https://systemslibrarian.github.io/crypto-lab-nonce-guard/" style="color:#35d6bb">nonce-guard</a></div>
@@ -996,6 +998,7 @@ function renderConformance(): void {
 }
 
 renderConformance();
+mountCommitment();
 
 const shared = parseShareQuery(location.search);
 keyInput.value = shared.key ?? bytesToHex(randomBytes(32));

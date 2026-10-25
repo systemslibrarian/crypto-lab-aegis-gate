@@ -153,6 +153,15 @@ async function scanEveryState(page: Page, theme: string): Promise<void> {
   await page.locator('#conformance-details-btn').click();
   await expect(page.locator('#conformance-details')).toBeVisible();
   await scan(page, `${theme}/conformance-details`);
+
+  for (const tag of ['16', '32']) {
+    await page.locator('#kc-tag').selectOption(tag);
+    for (const scenario of ['same-ad', 'collision', 'tampered-ad']) {
+      await page.locator('#kc-case').selectOption(scenario);
+      await page.locator('#kc-run').click();
+      await scan(page, `${theme}/commitment-${tag}-${scenario}`);
+    }
+  }
 }
 
 test.beforeEach(async ({ page }) => {

@@ -27,7 +27,7 @@ plaintext, ciphertext, tag, nonce, and associated data in plain language —
 before any hex appears — so a newcomer has an on-ramp and a cryptographer can
 skip it.
 
-Six interactive exhibits go beyond a byte dump:
+Seven interactive exhibits go beyond a byte dump:
 
 - **Encrypt / tamper (Exhibit 1)** — encrypt your own input with either tag
   length, flip a single bit of ciphertext or tag and see exactly where it
@@ -53,6 +53,16 @@ Six interactive exhibits go beyond a byte dump:
   collision probability for 96-bit vs 256-bit nonces, the reason AEGIS-256 exists.
 - **Live throughput benchmark (Exhibit 5)** and the **AEGIS family table
   (Exhibit 6)** covering AEGIS-128L, 256, and the 128X/256X parallel variants.
+- **One ciphertext, two keys (Exhibit 7)** — replay the AEGIS-256 vector from
+  Derbez et al., [Key Committing Attacks against AES-based AEAD Schemes](https://doi.org/10.46586/tosc.v2024.i1.135-157),
+  Appendix A.2 (journal p.156 / PDF p.22). Two known keys with constructed,
+  different associated data accept the same ciphertext/tag and plaintext. The
+  real six-block state trace shows convergence after AD; using identical AD or
+  flipping a bit of the constructed AD rejects the second context. The 128-bit
+  tag uses the published bytes; the 256-bit tag is recomputed by the real
+  encryptor. This is a full-robustness counterexample, not unknown-key recovery
+  or a forgery against a fixed unknown key. Longer tags do not repair this
+  constructed state collision. Changing a control retires the previous result.
 
 ## When to Use It
 - Understanding AES-based AEADs beyond AES-GCM and how nonce size changes deployment risk
@@ -72,7 +82,9 @@ The page replays the nine RFC 10032 Appendix A.3 encryption and rejection vector
 - RFC 10032 is a finalized IRTF Informational RFC, not an Internet Standard or a TLS cipher suite
 - Nonce reuse is catastrophic: same key+nonce across messages leaks plaintext relationships and breaks security
 - This implementation is pure TypeScript for education, not native-speed production crypto
-- Key commitment details differ by variant; review RFC 10032's security considerations for protocol-level assumptions
+- A successful tag check need not identify a unique key: Exhibit 7 executes a
+  known-key/variable-AD counterexample for AEGIS-256. This does not contradict
+  fixed-key AEAD authenticity; attacker control and the security notion matter.
 
 ## Real-World Usage
 - Designed by Hongjun Wu and Bart Preneel as a CAESAR competition finalist and described in RFC 10032 (September 2026)
@@ -88,6 +100,25 @@ cd crypto-lab-aegis-gate
 npm install
 npm run dev
 ```
+
+## Build and Verify
+
+```bash
+npm ci
+npm test
+npx playwright install chromium
+npm run build
+npm run test:a11y
+node tools/check-commitment-mutations.mjs
+```
+
+The unit suite includes the published commitment vector, both tag lengths,
+and identical-AD / tampered-AD rejection controls. Browser checks exercise the
+displayed authentication results, state convergence, and result retirement;
+the accessibility sweep includes all six commitment scenarios. The mutation
+runner independently breaks authentication, state differences, and the negative
+claim, requiring each owning browser assertion to fail after a successful build,
+then restores the original source and verifies the bundle hash.
 
 ## Related Demos
 - [crypto-lab-aes-modes](https://systemslibrarian.github.io/crypto-lab-aes-modes/) — AES block cipher modes and AEAD (GCM/CCM) behavior.
