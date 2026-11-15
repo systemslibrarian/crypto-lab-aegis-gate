@@ -69,7 +69,7 @@ Seven interactive exhibits go beyond a byte dump:
 - Teaching sponge-like AEAD construction with a 6-block update function
 - Comparing nonce handling: 96-bit (AES-GCM) vs 256-bit (AEGIS-256)
 - Evaluating AEGIS-256 ideas for high-throughput protocols and systems
-- Not for interoperability-critical TLS production paths today; AEGIS is not yet a TLS cipher suite
+- Not for interoperability-critical TLS production paths today: the AEGIS cipher suites in the [IANA TLS Cipher Suites registry](https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4) — TLS_AEGIS_256_SHA512 (0x13,0x06) and TLS_AEGIS_128L_SHA256 (0x13,0x07) — are marked Recommended: N and cite an individual draft, so peer support cannot be assumed
 - Do NOT rely on this pure-TypeScript build as production crypto — it is a teaching demo, not native-speed hardened code
 
 ## Live Demo
@@ -79,7 +79,7 @@ Seven interactive exhibits go beyond a byte dump:
 The page replays the nine RFC 10032 Appendix A.3 encryption and rejection vectors in your browser, showing each result byte-for-byte, lets you encrypt and authenticate your own inputs with both the 128-bit and 256-bit tag variants, steps the AEGIS state machine beside the RFC pseudocode, and demonstrates the nonce-reuse catastrophe as a live known-plaintext recovery. The separate Update test vector is checked in the unit suite.
 
 ## What Can Go Wrong
-- RFC 10032 is a finalized IRTF Informational RFC, not an Internet Standard or a TLS cipher suite
+- RFC 10032 is a finalized IRTF Informational RFC, not an Internet Standard; the two AEGIS TLS cipher-suite code points IANA has registered are Recommended: N (not evaluated by the IETF) and reference an individual draft, not an RFC
 - Nonce reuse is catastrophic: same key+nonce across messages leaks plaintext relationships and breaks security
 - This implementation is pure TypeScript for education, not native-speed production crypto
 - A successful tag check need not identify a unique key: Exhibit 7 executes a
@@ -91,6 +91,8 @@ The page replays the nine RFC 10032 Appendix A.3 encryption and rejection vector
 - Implemented across the ecosystem, including libsodium and the Zig standard library
 - Of active interest for high-throughput protocols and networking environments where AES hardware acceleration is available
 - RFC publication records CFRG consensus but is not an IETF standards-track approval or regulatory certification; verify such claims independently
+
+**Standards reviewed 15 November 2026:** the [IANA TLS Cipher Suites registry](https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4) (last updated 5 November 2026) lists TLS_AEGIS_256_SHA512 (0x13,0x06) and TLS_AEGIS_128L_SHA256 (0x13,0x07), DTLS-OK, Recommended: N, reference draft-denis-tls-aegis-07 — an individual submission dated 18 September 2026 with no formal standing in the IETF standards process. Per [RFC 9847 §3](https://www.rfc-editor.org/rfc/rfc9847.html#section-3), "N" means the item has not been evaluated by the IETF; it "does not necessarily mean that the mechanism is flawed, only that no consensus exists."
 
 ## How to Run Locally
 
