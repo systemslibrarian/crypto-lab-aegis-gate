@@ -1,5 +1,5 @@
 /**
- * AES S-box (FIPS 197 Figure 7).
+ * AES S-box (FIPS 197 (2001) Figure 7).
  * 256-byte lookup table - standard values, do not modify.
  */
 export const SBOX: Uint8Array = new Uint8Array([
