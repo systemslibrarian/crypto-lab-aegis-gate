@@ -129,6 +129,18 @@ test('encrypt then decrypt returns the exact plaintext at both tag lengths', asy
   }
 });
 
+test('the authenticated plaintext display preserves a leading U+FEFF', async ({ page }) => {
+  await loadScenario(page);
+  const message = '\uFEFF  📚  ';
+  await page.locator('#pt-input').fill(message);
+  for (const tagBytes of ['16', '32']) {
+    await page.locator('#tag-length').selectOption(tagBytes);
+    await page.locator('#encrypt-btn').click();
+    await page.locator('#decrypt-btn').click();
+    await expect.poll(() => page.locator('#decrypt-status').textContent()).toBe(`Decrypt OK: ${message}`);
+  }
+});
+
 test('Exhibit 1 ciphertext equals the state machine own C = P xor Z', async ({ page }) => {
   await loadScenario(page);
   await page.locator('#encrypt-btn').click();
@@ -452,12 +464,24 @@ test('benchmark reports one row per size and a tally that sums', async ({ page }
   await expect(log).toContainText('Measured winners on this run', { timeout: 150_000 });
   const text = (await log.textContent()) ?? '';
 
-  const sizeLines = text.split('\n').filter((l) => /^\d+ KB: AEGIS /.test(l));
+  const sizeLines = text.split('\n').filter((l) => /^\d+ KiB: AEGIS /.test(l));
   expect(sizeLines).toHaveLength(4);
   // Every measurement must be a real, positive throughput.
   for (const line of sizeLines) {
-    const nums = [...line.matchAll(/([\d.]+) MB\/s/g)].map((m) => Number(m[1]));
+    const nums = [...line.matchAll(/([\d.]+) MiB\/s/g)].map((m) => Number(m[1]));
     expect(nums).toHaveLength(2);
+    const size = Number.parseInt(line, 10) * 1024;
+    const timing = /(\d+) encryptions each, AEGIS ([\d.]+) ms, AES-GCM ([\d.]+) ms/.exec(line);
+    expect(timing).not.toBeNull();
+    const count = Number(timing![1]);
+    for (const [index, rate] of nums.entries()) {
+      const ms = Number(timing![index + 2]);
+      const mib = size * count / 2 ** 20;
+      // Both the rate (0.1 MiB/s) and elapsed time (0.01 ms) are rounded.
+      expect(rate + 0.05).toBeGreaterThanOrEqual(mib * 1000 / (ms + 0.005));
+      expect(rate - 0.05).toBeLessThanOrEqual(mib * 1000 / (ms - 0.005));
+    }
+
     for (const n of nums) {
       expect(n).toBeGreaterThan(0);
       expect(Number.isFinite(n)).toBe(true);

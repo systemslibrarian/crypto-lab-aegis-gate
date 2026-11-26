@@ -1,13 +1,27 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { runComparison, summarizeComparison, type BenchmarkResult, type ComparisonResult } from '../src/benchmark';
+import * as aegis from '../src/aegis';
+import { benchmarkAegis256, runComparison, summarizeComparison, type BenchmarkResult, type ComparisonResult } from '../src/benchmark';
 
 function row(throughputMBps: number): BenchmarkResult {
   return { algorithm: 'test', messageSizeBytes: 1, throughputMBps, timeMs: 1, iterations: 1 };
 }
 
 describe('benchmark', () => {
-  it('runs 1KB, 16KB, 256KB, and 1MB comparisons without errors', async () => {
+  it('passes fresh 32-byte nonces to AEGIS for all timed encryptions', async () => {
+    const spy = vi.spyOn(aegis, 'aegis256Encrypt');
+    try {
+      await benchmarkAegis256(64, 4);
+      const nonces = spy.mock.calls.map(([, nonce]) => Array.from(nonce).join(','));
+      expect(nonces).toHaveLength(4);
+      expect(new Set(nonces).size).toBe(4);
+      expect(spy.mock.calls.every(([, nonce]) => nonce.length === 32)).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('runs 1 KiB, 16 KiB, 256 KiB, and 1 MiB comparisons without errors', async () => {
     const results = await runComparison();
 
     expect(results.messageSizes).toEqual([1024, 16 * 1024, 256 * 1024, 1024 * 1024]);

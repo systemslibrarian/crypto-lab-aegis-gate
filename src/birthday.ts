@@ -5,9 +5,9 @@
  *
  *   p ~= 1 - exp(-n(n-1)/2 / 2^b)
  *
- * This is the reason AES-GCM's random-nonce use is capped near 2^32
- * messages (keeping p below 2^-32) while AEGIS-256's 256-bit nonce makes
- * random generation safe for any practical message count.
+ * At 2^32 messages and 96 random bits the model gives about 2^-33.
+ * SP 800-38D §8.3 separately caps GCM with random IVs at 2^32 invocations
+ * across all instances using the same key.
  */
 
 export interface CollisionEstimate {

@@ -3,7 +3,7 @@ import { randomBytes } from './bytes';
 
 /**
  * Benchmark AEGIS-256 encryption throughput.
- * Measures MB/s for various message sizes.
+ * Measures MiB/s for various message sizes.
  */
 export interface BenchmarkResult {
   algorithm: string;
@@ -30,7 +30,7 @@ export function summarizeComparison(results: ComparisonResult): string {
     else if (g > a) gcmWins += 1;
     else ties += 1;
   }
-  return `Measured winners on this run: AES-GCM ${gcmWins}/${results.messageSizes.length} sizes; AEGIS ${aegisWins}/${results.messageSizes.length}; ties ${ties}. Web Crypto's AES-GCM is native code here while this AEGIS is interpreted TypeScript, so this is an implementation race, not an equal-acceleration algorithm ranking. AEGIS is designed to overlap authentication with AES rounds; GCM uses a separate GHASH operation. The winner with native hardware acceleration is platform-specific and was not measured by this page.`;
+  return `Measured winners on this run: AES-GCM ${gcmWins}/${results.messageSizes.length} sizes; AEGIS ${aegisWins}/${results.messageSizes.length}; ties ${ties}. Web Crypto's AES-GCM is native code here while this AEGIS runs as JavaScript compiled from TypeScript, so this is an implementation race, not an equal-acceleration algorithm ranking. AEGIS is designed to overlap authentication with AES rounds; GCM uses a separate GHASH operation. The winner with native hardware acceleration is platform-specific and was not measured by this page.`;
 }
 
 function nowMs(): number {
@@ -85,12 +85,12 @@ export async function benchmarkAegis256(
   iterations: number,
 ): Promise<BenchmarkResult> {
   const key = randomBytes(32);
-  const nonce = randomBytes(32);
   const ad = new Uint8Array(0);
   const plaintext = randomBytes(messageSize);
 
   const start = nowMs();
   for (let i = 0; i < iterations; i += 1) {
+    const nonce = randomBytes(32);
     aegis256Encrypt(key, nonce, ad, plaintext);
     if ((i + 1) % 20 === 0) {
       await requestIdleYield();

@@ -322,12 +322,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <input id="bd-slider" type="range" min="0" max="64" step="1" value="32" aria-label="Number of messages as a power of two" />
       </label>
       <pre id="bd-output" class="status">&nbsp;</pre>
-      <p class="note">The usual comfort line is a collision probability of 2<sup>-32</sup>: with 96-bit random nonces you cross it near 2<sup>32</sup> messages (hence AES-GCM's limit); with 256-bit nonces you would need about 2<sup>112</sup> messages. That gap is the reason AEGIS-256 exists.</p>
+      <p class="note">At 2<sup>32</sup> messages, 96-bit random nonces give a collision probability near 2<sup>−33</sup>. The model crosses 2<sup>−32</sup> at about 2<sup>32.5</sup> messages for 96-bit nonces and 2<sup>112.5</sup> for 256-bit nonces. For GCM with random IVs, <a href="https://doi.org/10.6028/NIST.SP.800-38D">NIST SP 800-38D §8.3</a> limits authenticated-encryption invocations to 2<sup>32</sup> in total across devices sharing a key.</p>
     </section>
 
     <section class="panel" id="exhibit-5">
       <h2>Exhibit 5: Live Throughput Benchmark</h2>
-      <p class="predict">Predict: which wins in a browser &mdash; this pure-TypeScript AEGIS or the browser's native AES-GCM? On CPUs with AES instructions, native AEGIS implementations flip the result.</p>
+      <p class="predict">Predict: which wins in a browser &mdash; this pure-TypeScript AEGIS or the browser's native AES-GCM? Both runs draw a fresh random nonce for each encryption. Elapsed time includes nonce generation and browser scheduling. A native AEGIS implementation would need a separate measurement.</p>
       <button id="benchmark-btn" type="button">Run Benchmark</button>
       <pre id="benchmark-log" class="status" role="status" aria-live="polite">Not started.</pre>
       <div id="benchmark-chart" class="chart"></div>
@@ -903,9 +903,11 @@ function renderBirthday(): void {
 
 must<HTMLInputElement>('#bd-slider').addEventListener('input', renderBirthday);
 
-must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => {
+const benchmarkButton = must<HTMLButtonElement>('#benchmark-btn');
+benchmarkButton.addEventListener('click', async () => {
+  benchmarkButton.disabled = true;
   benchmarkLog.textContent =
-    'Benchmarking 1KB, 16KB, 256KB, 1MB... this yields between batches to avoid UI lockups.';
+    'Benchmarking 1 KiB, 16 KiB, 256 KiB, 1 MiB... this yields between batches to avoid UI lockups.';
   benchmarkChart.innerHTML = '';
 
   try {
@@ -922,13 +924,13 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
       const g = results.aesGcm[i];
 
       lines.push(
-        `${Math.round(size / 1024)} KB: AEGIS ${a.throughputMBps.toFixed(1)} MB/s | AES-GCM ${g.throughputMBps.toFixed(1)} MB/s`,
+        `${Math.round(size / 1024)} KiB: AEGIS ${a.throughputMBps.toFixed(1)} MiB/s | AES-GCM ${g.throughputMBps.toFixed(1)} MiB/s (${a.iterations} encryptions each, AEGIS ${a.timeMs.toFixed(2)} ms, AES-GCM ${g.timeMs.toFixed(2)} ms)`,
       );
 
       const row = document.createElement('div');
       row.className = 'bar-row';
       row.innerHTML = `
-        <span>${Math.round(size / 1024)} KB</span>
+        <span>${Math.round(size / 1024)} KiB</span>
         <div class="bar aegis" style="width:${(a.throughputMBps / maxThroughput) * 100}%">AEGIS ${a.throughputMBps.toFixed(1)}</div>
         <div class="bar gcm" style="width:${(g.throughputMBps / maxThroughput) * 100}%">GCM ${g.throughputMBps.toFixed(1)}</div>
       `;
@@ -938,6 +940,8 @@ must<HTMLButtonElement>('#benchmark-btn').addEventListener('click', async () => 
     benchmarkLog.textContent = `${lines.join('\n')}\n\n${summarizeComparison(results)}`;
   } catch (error) {
     benchmarkLog.textContent = `Benchmark failed: ${(error as Error).message}`;
+  } finally {
+    benchmarkButton.disabled = false;
   }
 });
 

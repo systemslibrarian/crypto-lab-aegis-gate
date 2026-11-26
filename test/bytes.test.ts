@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { bytesToHex, concatBytes, hexToBytes, padBlock, xorBytes } from '../src/bytes';
+import { bytesToHex, bytesToUtf8, concatBytes, hexToBytes, padBlock, utf8ToBytes, xorBytes } from '../src/bytes';
 
 describe('hexToBytes', () => {
   it('parses valid lowercase and uppercase hex', () => {
@@ -33,6 +33,14 @@ describe('hexToBytes', () => {
   it('round-trips with bytesToHex', () => {
     const hex = '1001000000000000000000000000000000000000000000000000000000000000';
     expect(bytesToHex(hexToBytes(hex))).toBe(hex);
+  });
+});
+
+describe('UTF-8 message display', () => {
+  it('preserves leading U+FEFF, spaces, and supplementary characters', () => {
+    const message = '\uFEFF  📚  ';
+    expect(bytesToHex(utf8ToBytes(message))).toBe('efbbbf2020f09f939a2020');
+    expect(bytesToUtf8(utf8ToBytes(message))).toBe(message);
   });
 });
 

@@ -37,7 +37,8 @@ export function utf8ToBytes(input: string): Uint8Array {
 }
 
 export function bytesToUtf8(input: Uint8Array): string {
-  return new TextDecoder().decode(input);
+  // A leading U+FEFF can be part of the authenticated message.
+  return new TextDecoder('utf-8', { ignoreBOM: true }).decode(input);
 }
 
 export function concatBytes(parts: Uint8Array[]): Uint8Array {
