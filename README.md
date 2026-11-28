@@ -52,7 +52,7 @@ Seven interactive exhibits go beyond a byte dump:
 - **Birthday-bound explorer (Exhibit 4)** — a slider comparing random-nonce
   collision probability for 96-bit vs 256-bit nonces, the reason AEGIS-256 exists.
 - **Live throughput benchmark (Exhibit 5)** and the **AEGIS family table
-  (Exhibit 6)** covering AEGIS-128L, 256, and the 128X/256X parallel variants.
+  (Exhibit 6)** covering AEGIS-128L, 256, and the 128X/256X parallel variants. The benchmark compares two implementations on the current device. The teaching AES round uses a state byte to index its substitution table. Its memory accesses depend on that state, and a throughput measurement cannot establish constant-time execution. The AES-GCM row calls Web Crypto, which may use hardware instructions. [Teaching AES round](src/aes.ts) and [benchmark](src/benchmark.ts).
 - **One ciphertext, two keys (Exhibit 7)** — replay the AEGIS-256 vector from
   Derbez et al., [Key Committing Attacks against AES-based AEAD Schemes](https://doi.org/10.46586/tosc.v2024.i1.135-157),
   Appendix A.2 (journal p.156 / PDF p.22). Two known keys with constructed,
